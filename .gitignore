@@ -1,0 +1,14 @@
+/.bloop
+/.metals
+/.scala-build
+/.vscode
+/out
+/diagram
+/.cache
+/build
+compile_commands.json
+*.backup
+/.idea
+*.iml
+*.drawio
+*.bkp
