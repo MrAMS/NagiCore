@@ -3,38 +3,50 @@ package nagicore.loongarch
 import chisel3._
 import chisel3.util._
 
+
 object CtrlFlags{
-    object nextPc extends ChiselEnum{
-        val pc4     = Value((1<<0).U)
-        val pc      = Value((1<<1).U)
-        val br_pc   = Value((1<<2).U)
+    // trait FlagsEnum {
+    //     def value: String
+    // }
+    // object aluASel{
+    //     sealed trait T extends FlagsEnum
+    //     case object ra extends T{
+    //         def value = "01"
+    //     }
+    //     case object pc extends T{
+    //         def value = "10"
+    //     }
+    // }
+    object aluASel{
+        val ra      = "01"
+        val pc      = "10"
+        def apply() = UInt(2.W)
     }
-    object aluASel extends ChiselEnum{
-        val ra      = Value((1<<0).U)
-        val pc      = Value((1<<1).U)
-        // val csr_val = Value((1<<2).U)
+    object aluBSel{
+        val rb      = "001"
+        val imm     = "010"
+        val num4    = "100"
+        def apply() = UInt(3.W)
     }
-    object aluBSel extends ChiselEnum{
-        val rb      = Value((1<<0).U)
-        val imm     = Value((1<<1).U)
-        val num4    = Value((1<<2).U)
+    object brpcAddSel{
+        val pc      = "01"
+        val ra_val  = "10"
+        def apply() = UInt(2.W)
     }
-    object brpcAddSel extends ChiselEnum{
-        val pc      = Value(false.B)
-        val ra_val  = Value(true.B)
+    object ldType{
+        val x       = "000001"
+        val b       = "000010"
+        val h       = "000100"
+        val w       = "001000"
+        val bu      = "010000"
+        val hu      = "100000"
+        def apply() = UInt(6.W)
     }
-    object ldType extends ChiselEnum{
-        val x       = Value((1<<0).U)
-        val b       = Value((1<<1).U)
-        val h       = Value((1<<2).U)
-        val w       = Value((1<<3).U)
-        val bu      = Value((1<<4).U)
-        val hu      = Value((1<<5).U)
-    }
-    object stType extends ChiselEnum{
-        val x       = Value((1<<0).U)
-        val b       = Value((1<<1).U)
-        val h       = Value((1<<2).U)
-        val w       = Value((1<<3).U)
+    object stType{
+        val x       = "0001"
+        val b       = "0010"
+        val h       = "0100"
+        val w       = "1000"
+        def apply() = UInt(4.W)
     }
 }

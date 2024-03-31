@@ -3,10 +3,11 @@ package nagicore.loongarch.stages
 import chisel3._
 import chisel3.util._
 import nagicore.loongarch.Config
-import nagicore.utils.onehot
+import nagicore.utils.Flags
 import nagicore.loongarch.CtrlFlags
 import nagicore.unit.ALU
 import nagicore.unit.BRU_SINGLE
+import org.json4s.scalap.scalasig.Flags
 
 class ex2ifIO extends Bundle with Config{
     val br_pc       = Output(UInt(XLEN.W))
@@ -65,7 +66,7 @@ class EX extends Module with Config{
     val take : Bool = bru.io.br_take && (!killed)
     io.ex2if.br_take := take
 
-    val is_ld : Bool = !killed && preg.ld_type =/= CtrlFlags.ldType.x
+    val is_ld : Bool = !killed && preg.ld_type =/= Flags.castFlag2Bitpat(CtrlFlags.ldType.x)
 
                 // when branch take or ld instr, we must kill next 2 instrs from IF, ID stages
     kill_nxt := Mux(take || is_ld, 2.U, 
@@ -80,15 +81,15 @@ class EX extends Module with Config{
                         )
                     )
 
-    io.ex2if.br_pc := preg.imm + Mux(preg.brpcAdd_sel.asUInt.asBool, preg.ra_val, preg.pc)
+    io.ex2if.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.castFlag2Bitpat(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
 
     io.ex2mem.bits.instr := preg.instr
 
-    val alu_a = onehot.Mux(preg.aluA_sel, Seq(
+    val alu_a = Flags.onehotMux(preg.aluA_sel, Seq(
         CtrlFlags.aluASel.ra   -> preg.ra_val,
         CtrlFlags.aluASel.pc   -> preg.pc,
     ))
-    val alu_b = onehot.Mux(preg.aluB_sel, Seq(
+    val alu_b = Flags.onehotMux(preg.aluB_sel, Seq(
         CtrlFlags.aluBSel.rb   -> preg.rb_val,
         CtrlFlags.aluBSel.imm  -> preg.imm,
         CtrlFlags.aluBSel.num4 -> 4.U,

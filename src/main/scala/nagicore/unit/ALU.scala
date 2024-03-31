@@ -3,7 +3,9 @@ package nagicore.unit
 import chisel3._
 import chisel3.util._
 
-object ALU_OP extends ChiselEnum {
+import nagicore.utils.Flags
+
+object ALU_OP{
     // val X       = Value(0.U)
     // val ADD     = Value(1.U)
     // val SUB     = Value(2.U)
@@ -19,8 +21,30 @@ object ALU_OP extends ChiselEnum {
     // val COPY_B  = Value(2048.U)
     // val NOR     = Value(4096.U)
     // val MUL     = Value(8192.U)
-    val X, ADD, SUB, AND, OR, XOR, LT, LTU, SL, SR, SRA, COPY_A, COPY_B, NOR,
-    MUL, MULH, MULHU, DIV, DIVU, MOD, MODU = Value
+    // val X, ADD, SUB, AND, OR, XOR, LT, LTU, SL, SR, SRA, COPY_A, COPY_B, NOR,
+    // MUL, MULH, MULHU, DIV, DIVU, MOD, MODU = Value
+    val X       = "00000"
+    val ADD     = "00001"
+    val SUB     = "00010"
+    val AND     = "00011"
+    val OR      = "00100"
+    val XOR     = "00101"
+    val LT      = "00110"
+    val LTU     = "00111"
+    val SL      = "01000"
+    val SR      = "01001"
+    val SRA     = "01010"
+    val COPY_A  = "01011"
+    val COPY_B  = "01100"
+    val NOR     = "01101"
+    val MUL     = "01110"
+    val MULH    = "01111"
+    val MULHU   = "10000"
+    val DIV     = "10001"
+    val DIVU    = "10010"
+    val MOD     = "10011"
+    val MODU    = "10100"
+    def apply() = UInt(X.length().W)
 }
 
 class ALUIO(dataBits: Int) extends Bundle{
@@ -45,7 +69,7 @@ class ALU(dataBits: Int) extends Module {
     io.sum := sum
 
     import ALU_OP._
-    io.out := MuxLookup(io.op, 0.U)(Seq(
+    io.out := Flags.MuxCase(io.op, Seq(
         ADD     -> sum,
         SUB     -> mins(dataBits-1, 0),
         SL      -> (io.a << shamt),

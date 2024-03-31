@@ -3,17 +3,18 @@ package nagicore.unit
 import chisel3._
 import chisel3.util._
 
-import nagicore.utils.onehot
+import nagicore.utils.Flags
 
-object BR_TYPE extends ChiselEnum {
-    val NEVER =     Value(1.U)
-    val EQ =    Value(2.U)
-    val NE =    Value(4.U)
-    val LT =    Value(8.U)
-    val LTU =   Value(16.U)
-    val GE =    Value(32.U)
-    val GEU =   Value(64.U)
-    val ALWAYS =  Value(128.U)
+object BR_TYPE{
+    val NEVER   = "00000001"
+    val EQ      = "00000010"
+    val NE      = "00000100"
+    val LT      = "00001000"
+    val LTU     = "00010000"
+    val GE      = "00100000"
+    val GEU     = "01000000"
+    val ALWAYS  = "10000000"
+    def apply() = UInt(NEVER.length.W)
 }
 
 class BRU_WITH_ALU_IO(dataBits: Int) extends Bundle{
@@ -30,8 +31,8 @@ class BRU_WITH_ALU(dataBits: Int) extends Module{
     import BR_TYPE._
 
     
-    io.br_take := onehot.Mux(io.br_type, Seq(
-        NEVER       -> false.B,
+    io.br_take := Flags.onehotMux(io.br_type, Seq(
+        NEVER   -> false.B,
         EQ      -> eq,
         NE      -> !eq,
         LT      -> io.alu_out(0),
@@ -66,8 +67,8 @@ class BRU_SINGLE(dataBits: Int) extends Module{
 
     import BR_TYPE._
 
-    io.br_take := onehot.Mux(io.br_type, Seq(
-        NEVER       -> false.B,
+    io.br_take := Flags.onehotMux(io.br_type, Seq(
+        NEVER   -> false.B,
         EQ      -> eq,
         NE      -> !eq,
         LT      -> isLT,

@@ -6,7 +6,6 @@ import chisel3.util._
 import nagicore.loongarch.Config
 import nagicore.unit.DPIC_SRAM
 import nagicore.loongarch.CtrlFlags
-import nagicore.utils.onehot
 
 class if2idBits extends Bundle with Config{
     val instr       = UInt(XLEN.W)

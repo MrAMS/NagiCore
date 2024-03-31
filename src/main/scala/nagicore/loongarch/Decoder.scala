@@ -7,45 +7,48 @@ import chisel3.util.experimental.decode._
 import nagicore.unit.ALU
 import nagicore.unit.ALU_OP
 import nagicore.unit.BR_TYPE
-import nagicore.utils.onehot
+import nagicore.utils.Flags
+import org.json4s.scalap.scalasig.Flags
 
 object DecoderMap{
     import Instructions._
-    object ImmType extends ChiselEnum{
-        val si12    = Value((1<<0).U)
-        val si20    = Value((1<<1).U)
-        val ui12    = Value((1<<2).U)
-        val ui5     = Value((1<<3).U)
-        val offs26  = Value((1<<4).U)
-        val offs16  = Value((1<<5).U)
+    object ImmType{
+        val si12    = "0000"
+        val si20    = "0001"
+        val ui12    = "0010"
+        val ui5     = "0011"
+        val offs26  = "0100"
+        val offs16  = "0101"
+        def apply() = UInt(4.W)
     }
-    object regType extends ChiselEnum{
-        val rj     = Value((1<<0).U)
-        val rk     = Value((1<<1).U)
-        val rd     = Value((1<<2).U)
+    object regType{
+        val rj     = "000"
+        val rk     = "001"
+        val rd     = "010"
         // can be used as GPR_WB=false
-        val x      = Value((1<<3).U)
+        val x      = "011"
         // for inst: BL
-        val num1   = Value((1<<4).U)
+        val num1   = "100"
+        def apply() = UInt(3.W)
     }
 
 
     def make_instr_list(
-        regB_sel: regType.Type                  = regType.rk,
-        regC_sel: regType.Type                  = regType.rd,
-        imm_type: ImmType.Type                  = ImmType.si12,
-        aluA_sel: CtrlFlags.aluASel.Type        = CtrlFlags.aluASel.ra,
-        aluB_sel: CtrlFlags.aluBSel.Type        = CtrlFlags.aluBSel.rb,
-        alu_op: ALU_OP.Type                     = ALU_OP.X,
-        brpcAdd_sel: CtrlFlags.brpcAddSel.Type  = CtrlFlags.brpcAddSel.pc,
-        br_type: BR_TYPE.Type                   = BR_TYPE.NEVER,
-        ld_type: CtrlFlags.ldType.Type          = CtrlFlags.ldType.x,
-        st_type: CtrlFlags.stType.Type          = CtrlFlags.stType.x,
-        ill_instr: Bool                         = false.B)
+        regB_sel: String    = regType.rk,
+        regC_sel: String    = regType.rd,
+        imm_type: String    = ImmType.si12,
+        aluA_sel: String    = CtrlFlags.aluASel.ra,
+        aluB_sel: String    = CtrlFlags.aluBSel.rb,
+        alu_op: String      = ALU_OP.X,
+        brpcAdd_sel: String = CtrlFlags.brpcAddSel.pc,
+        br_type: String     = BR_TYPE.NEVER,
+        ld_type: String     = CtrlFlags.ldType.x,
+        st_type: String     = CtrlFlags.stType.x,
+        ill_instr: String   = "0")
         = List(regB_sel, regC_sel, imm_type, aluA_sel, aluB_sel, alu_op, brpcAdd_sel, br_type, ld_type, st_type, ill_instr)
     
-    val default_instr_list = make_instr_list(ill_instr=true.B)
-    val instr_list_map = Array(
+    val default_instr_list = make_instr_list(ill_instr="1")
+    val instr_list_map : Seq[(BitPat, Seq[String])]   = Seq(
         // GR[rd] = GR[rj]+GR[rk]
         ADDW        -> make_instr_list(alu_op=ALU_OP.ADD),
         // GR[rd] = GR[rj]-GR[rk]
@@ -125,38 +128,7 @@ object DecoderMap{
         STW         -> make_instr_list(regC_sel=regType.x, alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, st_type=CtrlFlags.stType.w),
         
     )
-    // val tmap = Array(
-    //     STB -> List(CtrlFlags.nextPc.pc),
-    // )
-    // print(instr_list_map.map(
-    //         x => x._2.map(y => y.asUInt)
-    //                     .reduce(Cat(_, _)).litValue.toString(2) ++ "\n"
-    //             ).reduce(_ ++ _)
-    //     )
-    // print(instr_list_map.map(
-    //     x => 2.U.litValue.toString(2) ++ "\n"
-    //         ).reduce(_ ++ _)
-    // )
-    
-    // val decode_table: TruthTable = TruthTable(instr_list_map.map(
-    //         x => x._1 -> BitPat(
-    //                 s"b${x._2.map(y => y.asUInt)
-    //                     .reduce(Cat(_, _))
-    //                 }"
-    //             )
-    //     ),
-    //     BitPat("b0")
-    // )
 }
-
-// case class Pattern(val name: String, val code: BigInt) extends DecodePattern {
-//   def bitPat: BitPat = BitPat("b" + code.toString(2))
-// }
-
-// object NameContainsAdd extends DecodeField[Pattern, DecoderMap.ImmType.Type] {
-//   def name = "name contains 'add'"
-//   def genTable(i: Pattern) = if (i.name.contains("add")) DecoderMap.ImmType.offs16 else DecoderMap.ImmType.si12
-// }
 
 class Decoder extends Module with Config{
     val io = IO(new Bundle {
@@ -176,22 +148,27 @@ class Decoder extends Module with Config{
         val ill_instr   = Output(Bool())
 
     })
-    val flags = ListLookup(io.instr, DecoderMap.default_instr_list, DecoderMap.instr_list_map)
+    def decode_signal(id:Int) = decoder(EspressoMinimizer, io.instr, TruthTable(
+        DecoderMap.instr_list_map.map(x=> x._1 -> BitPat(s"b${x._2(id)}")),
+        BitPat(s"b${DecoderMap.default_instr_list(id)}")
+    ))
+
     // 0            1           2           3           4           5           6           7           8           9           10        
     // regB_sel,    regC_sel,   imm_type,   aluA_sel,   aluB_sel,   alu_op,     brpcAdd_sel, br_type,   ld_type,    st_type,    ill_instr
-    io.aluA_sel := flags(3)
-    io.aluB_sel := flags(4)
-    io.alu_op := flags(5)
-    io.brpcAdd_sel := flags(6)
-    io.br_type := flags(7)
-    io.ld_type := flags(8)
-    io.st_type := flags(9)
-    io.ill_instr := flags(10)
 
-    def imm_gen(inst: UInt, imm_type: DecoderMap.ImmType.Type): UInt = {
+    io.aluA_sel := decode_signal(3)
+    io.aluB_sel := decode_signal(4)
+    io.alu_op := decode_signal(5)
+    io.brpcAdd_sel := decode_signal(6)
+    io.br_type := decode_signal(7)
+    io.ld_type := decode_signal(8)
+    io.st_type := decode_signal(9)
+    io.ill_instr := decode_signal(10)
+
+    def imm_gen(inst: UInt, imm_type: UInt): UInt = {
         val imm = Wire(UInt(32.W))
         import DecoderMap.ImmType._
-        imm := onehot.Mux(imm_type, Seq(
+        imm := Flags.MuxCase(imm_type, Seq(
             si12    -> Cat(Fill(18, inst(21)), inst(21, 10), 0.U(2.W)),
             si20    -> Cat(inst(24, 5), 0.U(12.W)),
             ui12    -> Cat(0.U(20.W), inst(21, 10)),
@@ -202,18 +179,17 @@ class Decoder extends Module with Config{
         imm
     }
     
-    val (imm_type, imm_type_valid) = DecoderMap.ImmType.safe(flags(2).asUInt)
-    assert(imm_type_valid)
-
+    val imm_type = decode_signal(2)
     io.imm := imm_gen(io.instr, imm_type)
+
     val rd = io.instr(4, 0).asUInt
     val rj = io.instr(9, 5).asUInt
     val rk = io.instr(14, 10).asUInt
     io.ra := rj
 
-    val (rb_type, rb_type_valid) = DecoderMap.regType.safe(flags(0).asUInt)
-    assert(rb_type_valid)
-    io.rb := onehot.Mux(rb_type, Seq(
+    val rb_type = decode_signal(0)
+
+    io.rb := Flags.MuxCase(rb_type, Seq(
         DecoderMap.regType.rj   -> rj,
         DecoderMap.regType.rk   -> rk,
         DecoderMap.regType.rd   -> rd,
@@ -221,13 +197,14 @@ class Decoder extends Module with Config{
         DecoderMap.regType.num1 -> 1.U,
     ))
 
-    val (rc_type, rc_type_valid) = DecoderMap.regType.safe(flags(1).asUInt)
-    assert(rc_type_valid)
-    io.rc := onehot.Mux(rc_type, Seq(
+    val rc_type = decode_signal(1)
+
+    io.rc := Flags.MuxCase(rc_type, Seq(
         DecoderMap.regType.rj   -> rj,
         DecoderMap.regType.rk   -> rk,
         DecoderMap.regType.rd   -> rd,
         DecoderMap.regType.x    -> 0.U,
         DecoderMap.regType.num1 -> 1.U,
     ))
+    
 }

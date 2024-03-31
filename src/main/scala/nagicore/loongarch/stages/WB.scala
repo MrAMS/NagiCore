@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import nagicore.loongarch.Config
 import nagicore.loongarch.CtrlFlags
-import nagicore.utils.onehot
+import nagicore.utils.Flags
 
 class wb2idIO extends Bundle with Config{
     val wb_data     = Output(UInt(XLEN.W))
@@ -34,7 +34,7 @@ class WB extends Module with Config{
     val halfData = Mux(addr(1), wordData(31, 16), wordData(15, 0))
     val byteData = Mux(addr(0), halfData(15, 8), halfData(7, 0))
 
-    val rdata_wb = onehot.Mux(preg.ld_type, Seq(
+    val rdata_wb = Flags.onehotMux(preg.ld_type, Seq(
         CtrlFlags.ldType.x  -> (0.U).zext,
         CtrlFlags.ldType.b  -> byteData.asSInt,
         CtrlFlags.ldType.bu -> byteData.zext,
@@ -43,7 +43,7 @@ class WB extends Module with Config{
         CtrlFlags.ldType.w  -> wordData.zext,
     )).asUInt
 
-    val wb_data = Mux(preg.ld_type =/= CtrlFlags.ldType.x, rdata_wb, preg.alu_out)
+    val wb_data = Mux(preg.ld_type =/= Flags.castFlag2Bitpat(CtrlFlags.ldType.x), rdata_wb, preg.alu_out)
     io.wb2id.gpr_id := Mux(preg.valid, preg.rc, 0.U)
     io.wb2id.wb_data := wb_data
 
