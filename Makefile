@@ -5,10 +5,13 @@ SRC			+= $(shell find src/main/resources/sv -name "*.sv" -or -name "*.v")
 TARGET 		= $(BUILD_DIR)/Core.v
 
 $(TARGET): $(SRC)
-	-rm -rf build
+	-rm -rf $(BUILD_DIR)
 	mill nagicore.run hello
 
 generate: $(TARGET)
+
+clean: 
+	-rm -rf $(BUILD_DIR)
 
 intellij-init:
 	mill mill.idea.GenIdea/idea
