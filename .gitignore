@@ -10,5 +10,5 @@ compile_commands.json
 *.backup
 /.idea
 *.iml
-*.drawio
+# *.drawio
 *.bkp

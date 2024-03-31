@@ -1,0 +1,12 @@
+# https://chipsalliance.github.io/verible/lint.html
+-package-filename
+-enum-name-style
+-struct-union-name-style
+-line-length=150
+-no-tabs=false
+-explicit-function-lifetime=false
+-parameter-name-style
+-generate-label=false
+-always-comb=false
+-explicit-parameter-storage-type=false
+-no-trailing-spaces=false

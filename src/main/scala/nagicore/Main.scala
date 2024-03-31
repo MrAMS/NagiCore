@@ -26,4 +26,5 @@ object Main extends App {
         val executeArgs = Array("-td", build_dir)
         (new ChiselStage).execute(executeArgs, executeOptions)
     }
+    exportVerilog(() => new nagicore.loongarch.Core)
 }
