@@ -66,7 +66,7 @@ class EX extends Module with Config{
     val take : Bool = bru.io.br_take && (!killed)
     io.ex2if.br_take := take
 
-    val is_ld : Bool = !killed && preg.ld_type =/= Flags.castFlag2Bitpat(CtrlFlags.ldType.x)
+    val is_ld : Bool = !killed && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
 
                 // when branch take or ld instr, we must kill next 2 instrs from IF, ID stages
     kill_nxt := Mux(take || is_ld, 2.U, 
@@ -81,7 +81,7 @@ class EX extends Module with Config{
                         )
                     )
 
-    io.ex2if.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.castFlag2Bitpat(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
+    io.ex2if.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.bp(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
 
     io.ex2mem.bits.instr := preg.instr
 

@@ -45,10 +45,22 @@ object DecoderMap{
         ld_type: String     = CtrlFlags.ldType.x,
         st_type: String     = CtrlFlags.stType.x,
         ill_instr: String   = "0")
-        = List(regB_sel, regC_sel, imm_type, aluA_sel, aluB_sel, alu_op, brpcAdd_sel, br_type, ld_type, st_type, ill_instr)
+        = Map(
+            "regB_sel"->regB_sel,
+            "regC_sel"->regC_sel,
+            "imm_type"->imm_type,
+            "aluA_sel"->aluA_sel,
+            "aluB_sel"->aluB_sel,
+            "alu_op"->alu_op,
+            "brpcAdd_sel"->brpcAdd_sel,
+            "br_type"->br_type,
+            "ld_type"->ld_type,
+            "st_type"->st_type,
+            "ill_instr"->ill_instr
+        )
     
     val default_instr_list = make_instr_list(ill_instr="1")
-    val instr_list_map : Seq[(BitPat, Seq[String])]   = Seq(
+    val instr_list_map : Seq[(BitPat, Map[String, String])]   = Seq(
         // GR[rd] = GR[rj]+GR[rk]
         ADDW        -> make_instr_list(alu_op=ALU_OP.ADD),
         // GR[rd] = GR[rj]-GR[rk]
@@ -148,22 +160,17 @@ class Decoder extends Module with Config{
         val ill_instr   = Output(Bool())
 
     })
-    def decode_signal(id:Int) = decoder(EspressoMinimizer, io.instr, TruthTable(
-        DecoderMap.instr_list_map.map(x=> x._1 -> BitPat(s"b${x._2(id)}")),
-        BitPat(s"b${DecoderMap.default_instr_list(id)}")
-    ))
+    def decode_signal(signal_name:String) =
+        Flags.decode_flag(signal_name, io.instr, DecoderMap.instr_list_map, DecoderMap.default_instr_list)
 
-    // 0            1           2           3           4           5           6           7           8           9           10        
-    // regB_sel,    regC_sel,   imm_type,   aluA_sel,   aluB_sel,   alu_op,     brpcAdd_sel, br_type,   ld_type,    st_type,    ill_instr
-
-    io.aluA_sel := decode_signal(3)
-    io.aluB_sel := decode_signal(4)
-    io.alu_op := decode_signal(5)
-    io.brpcAdd_sel := decode_signal(6)
-    io.br_type := decode_signal(7)
-    io.ld_type := decode_signal(8)
-    io.st_type := decode_signal(9)
-    io.ill_instr := decode_signal(10)
+    io.aluA_sel := decode_signal("aluA_sel")
+    io.aluB_sel := decode_signal("aluB_sel")
+    io.alu_op := decode_signal("alu_op")
+    io.brpcAdd_sel := decode_signal("brpcAdd_sel")
+    io.br_type := decode_signal("br_type")
+    io.ld_type := decode_signal("ld_type")
+    io.st_type := decode_signal("st_type")
+    io.ill_instr := decode_signal("ill_instr")
 
     def imm_gen(inst: UInt, imm_type: UInt): UInt = {
         val imm = Wire(UInt(32.W))
@@ -179,7 +186,7 @@ class Decoder extends Module with Config{
         imm
     }
     
-    val imm_type = decode_signal(2)
+    val imm_type = decode_signal("imm_type")
     io.imm := imm_gen(io.instr, imm_type)
 
     val rd = io.instr(4, 0).asUInt
@@ -187,7 +194,7 @@ class Decoder extends Module with Config{
     val rk = io.instr(14, 10).asUInt
     io.ra := rj
 
-    val rb_type = decode_signal(0)
+    val rb_type = decode_signal("regB_sel")
 
     io.rb := Flags.MuxCase(rb_type, Seq(
         DecoderMap.regType.rj   -> rj,
@@ -197,7 +204,7 @@ class Decoder extends Module with Config{
         DecoderMap.regType.num1 -> 1.U,
     ))
 
-    val rc_type = decode_signal(1)
+    val rc_type = decode_signal("regC_sel")
 
     io.rc := Flags.MuxCase(rc_type, Seq(
         DecoderMap.regType.rj   -> rj,

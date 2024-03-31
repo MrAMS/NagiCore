@@ -56,15 +56,15 @@ class MEM extends Module with Config{
     dmem.io.rst := reset
     dmem.io.addr := addr
     dmem.io.wdata := preg.rb_val
-    dmem.io.en := (preg.ld_type =/= Flags.castFlag2Bitpat(CtrlFlags.ldType.x) || preg.st_type =/= Flags.castFlag2Bitpat(CtrlFlags.stType.x)) && preg.valid
+    dmem.io.en := (preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x) || preg.st_type =/= Flags.bp(CtrlFlags.stType.x)) && preg.valid
     dmem.io.wmask := Flags.onehotMux(preg.st_type, Seq(
         CtrlFlags.stType.x  -> 0.U,
         CtrlFlags.stType.b  -> ("b1".U<<addr(1, 0)),
         CtrlFlags.stType.h  -> ("b11".U<<(addr(1)##0.U(1.W))),
         CtrlFlags.stType.w  -> "b1111".U,
     ))
-    assert(preg.st_type===Flags.castFlag2Bitpat(CtrlFlags.stType.h) && addr(0) === 0.U)
-    assert(preg.st_type===Flags.castFlag2Bitpat(CtrlFlags.stType.w) && addr(1, 0) === 0.U)
+    assert(preg.st_type===Flags.bp(CtrlFlags.stType.h) && addr(0) === 0.U)
+    assert(preg.st_type===Flags.bp(CtrlFlags.stType.w) && addr(1, 0) === 0.U)
 
     io.mem2wb.bits.rdata := dmem.io.rdata
 
