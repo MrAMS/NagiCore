@@ -18,7 +18,7 @@ object Flags{
         assert(cases.map(x => x._1.count(_ == '1')==1).reduce(_ && _))
         // check no duplicate
         assert(cases.map(x=>x._1).toSet.size == cases.size)
-        chisel3.util.Mux1H(cases.map(x => signal(findFirstOne(x._1).get) -> x._2))
+        chisel3.util.Mux1H(cases.map(x => signal(x._1.length-1 - findFirstOne(x._1).get) -> x._2))
     }
     def MuxCase[T <: Data](signal: UInt, cases: Iterable[(String, T)]) = {
         // check no duplicate

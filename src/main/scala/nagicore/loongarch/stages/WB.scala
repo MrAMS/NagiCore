@@ -26,7 +26,7 @@ class WB extends Module with Config{
     val preg = RegEnable(io.mem2wb.bits, true.B)
 
     // should not use value in pipeline registers
-    val rdata_raw = preg.rdata
+    val rdata_raw = io.mem2wb.bits.rdata
 
     val addr = preg.alu_out
     val wordData = if(XLEN == 64) Mux(addr(2), rdata_raw(63, 32), rdata_raw(31, 0))
@@ -49,4 +49,20 @@ class WB extends Module with Config{
 
     io.wb2id.bypass_rc := io.wb2id.gpr_id
     io.wb2id.bypass_val := io.wb2id.wb_data
+
+    if(DPIC_UPDATE){
+        import nagicore.unit.DPIC_UPDATE_PC
+        val dpic_update_pc = Module(new DPIC_UPDATE_PC(XLEN))
+        dpic_update_pc.io.clk := clock
+        dpic_update_pc.io.rst := reset
+        dpic_update_pc.io.pc := preg.pc
+        dpic_update_pc.io.wen := preg.valid
+
+        import nagicore.unit.DPIC_UPDATE_GPR
+        val dpic_update_gpr = Module(new DPIC_UPDATE_GPR(XLEN, GPR_NUM))
+        dpic_update_gpr.io.clk := clock
+        dpic_update_gpr.io.rst := reset
+        dpic_update_gpr.io.id := io.wb2id.gpr_id
+        dpic_update_gpr.io.wdata := io.wb2id.wb_data
+    }
 }

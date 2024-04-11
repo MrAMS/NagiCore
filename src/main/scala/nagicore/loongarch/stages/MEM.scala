@@ -13,6 +13,7 @@ class mem2wbBits extends Bundle with Config{
     val rc          = UInt(GPR_LEN.W)
     val ld_type     = CtrlFlags.ldType()
     val rdata       = UInt(XLEN.W)
+    val pc          = UInt(XLEN.W)
 
     val valid       = Bool()
 }
@@ -63,10 +64,12 @@ class MEM extends Module with Config{
         CtrlFlags.stType.h  -> ("b11".U<<(addr(1)##0.U(1.W))),
         CtrlFlags.stType.w  -> "b1111".U,
     ))
-    assert(preg.st_type===Flags.bp(CtrlFlags.stType.h) && addr(0) === 0.U)
-    assert(preg.st_type===Flags.bp(CtrlFlags.stType.w) && addr(1, 0) === 0.U)
+    assert((preg.st_type===Flags.bp(CtrlFlags.stType.h) && addr(0) === 0.U) || preg.st_type=/=Flags.bp(CtrlFlags.stType.h))
+    assert((preg.st_type===Flags.bp(CtrlFlags.stType.w) && addr(1, 0) === 0.U) || preg.st_type=/=Flags.bp(CtrlFlags.stType.w))
 
     io.mem2wb.bits.rdata := dmem.io.rdata
+
+    io.mem2wb.bits.pc := preg.pc
 
     io.mem2id.bypass_rc := Mux(preg.valid, preg.rc, 0.U)
     io.mem2id.bypass_val := preg.alu_out

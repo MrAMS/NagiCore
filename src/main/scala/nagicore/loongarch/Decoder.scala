@@ -68,7 +68,7 @@ object DecoderMap{
         // GR[rd] = GR[rj]+SignExt(si12, 32)
         ADDIW       -> make_instr_list(alu_op=ALU_OP.ADD, aluB_sel = CtrlFlags.aluBSel.imm),
         // GR[rd] = {si20, 12'b0}
-        LU12IW      -> make_instr_list(alu_op=ALU_OP.COPY_B, imm_type=ImmType.si20),
+        LU12IW      -> make_instr_list(alu_op=ALU_OP.COPY_B, aluB_sel = CtrlFlags.aluBSel.imm, imm_type=ImmType.si20),
         // GR[rd] = ([un]signed(GR[rj]) < [un]signed(GR[rk])) ? 1 : 0
         SLT         -> make_instr_list(alu_op=ALU_OP.LT),
         SLTU        -> make_instr_list(alu_op=ALU_OP.LTU),
@@ -116,12 +116,12 @@ object DecoderMap{
         SRAIW       -> make_instr_list(alu_op=ALU_OP.SRA, aluB_sel = CtrlFlags.aluBSel.imm, imm_type = ImmType.ui5),
 
         // if GR[rj] ? GR[rd] : PC = PC + SignExtend({offs16, 2'b0}, 32)
-        BEQ         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.EQ),
-        BNE         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.NE),
-        BLT         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.LT),
-        BGE         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.GE),
-        BLTU        -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.LTU),
-        BGEU        -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.GEU),
+        BEQ         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.EQ,    imm_type=ImmType.offs16),
+        BNE         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.NE,    imm_type=ImmType.offs16),
+        BLT         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.LT,    imm_type=ImmType.offs16),
+        BGE         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.GE,    imm_type=ImmType.offs16),
+        BLTU        -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.LTU,   imm_type=ImmType.offs16),
+        BGEU        -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.GEU,   imm_type=ImmType.offs16),
         // PC = PC + SignExtend({offs26, 2'b0}, 32)
         B           -> make_instr_list(regC_sel=regType.x, alu_op=ALU_OP.X, br_type=BR_TYPE.ALWAYS, imm_type=ImmType.offs26),
         // GR[1] = PC + 4; PC = PC + SignExtend({offs26, 2'b0}, 32)
@@ -134,10 +134,11 @@ object DecoderMap{
         LDBU        -> make_instr_list(alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, ld_type=CtrlFlags.ldType.bu),
         LDH         -> make_instr_list(alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, ld_type=CtrlFlags.ldType.h),
         LDHU        -> make_instr_list(alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, ld_type=CtrlFlags.ldType.hu),
+        LDW         -> make_instr_list(alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, ld_type=CtrlFlags.ldType.w),
 
-        STB         -> make_instr_list(regC_sel=regType.x, alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, st_type=CtrlFlags.stType.b),
-        STH         -> make_instr_list(regC_sel=regType.x, alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, st_type=CtrlFlags.stType.h),
-        STW         -> make_instr_list(regC_sel=regType.x, alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, st_type=CtrlFlags.stType.w),
+        STB         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, st_type=CtrlFlags.stType.b),
+        STH         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, st_type=CtrlFlags.stType.h),
+        STW         -> make_instr_list(regB_sel=regType.rd, regC_sel=regType.x, alu_op=ALU_OP.ADD, aluB_sel=CtrlFlags.aluBSel.imm, st_type=CtrlFlags.stType.w),
         
     )
 }
@@ -176,7 +177,7 @@ class Decoder extends Module with Config{
         val imm = Wire(UInt(32.W))
         import DecoderMap.ImmType._
         imm := Flags.MuxCase(imm_type, Seq(
-            si12    -> Cat(Fill(18, inst(21)), inst(21, 10), 0.U(2.W)),
+            si12    -> Cat(Fill(20, inst(21)), inst(21, 10)),
             si20    -> Cat(inst(24, 5), 0.U(12.W)),
             ui12    -> Cat(0.U(20.W), inst(21, 10)),
             ui5     -> Cat(0.U(27.W), inst(14, 10)),

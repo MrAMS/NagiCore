@@ -28,6 +28,7 @@ class ex2memBits extends Bundle with Config{
     val rc          = UInt(GPR_LEN.W)
     val ld_type     = CtrlFlags.ldType()
     val st_type     = CtrlFlags.stType()
+    val pc          = UInt(XLEN.W)
 
     val valid       = Bool()
 }
@@ -52,10 +53,13 @@ class EX extends Module with Config{
     val kill_nxt = RegEnable(0.U(2.W), !io.ex2mem.stall)
     val killed = kill_nxt =/= 0.U || !preg.valid
 
-    val stall_nxt = RegEnable(0.U(2.W), !io.ex2mem.stall)
-    val stalled = stall_nxt =/= 0.U
+    val is_ld : Bool = !killed && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
 
-    io.ex2mem.bits.valid := !killed
+    val stall_nxt = RegEnable(0.U(2.W), !io.ex2mem.stall)
+    // must stall when ld comes immediately unlike kill
+    val stalled = stall_nxt =/= 0.U || is_ld
+
+    io.ex2mem.bits.valid := !killed && preg.valid
     io.id2ex.stall := stalled || io.ex2mem.stall
     
     val bru = Module(new BRU_SINGLE(XLEN))
@@ -66,7 +70,6 @@ class EX extends Module with Config{
     val take : Bool = bru.io.br_take && (!killed)
     io.ex2if.br_take := take
 
-    val is_ld : Bool = !killed && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
 
                 // when branch take or ld instr, we must kill next 2 instrs from IF, ID stages
     kill_nxt := Mux(take || is_ld, 2.U, 
@@ -75,7 +78,7 @@ class EX extends Module with Config{
                     )
                 )
                 // we must stall 2 cycs until ld instr get value from mem and reach wb stage
-    stall_nxt := Mux(is_ld, 2.U,
+    stall_nxt := Mux(is_ld, 1.U,
                         Mux(stall_nxt===0.U, 0.U,
                             stall_nxt-1.U
                         )
@@ -107,6 +110,8 @@ class EX extends Module with Config{
     io.ex2mem.bits.ld_type := preg.ld_type
 
     io.ex2mem.bits.st_type := preg.st_type
+
+    io.ex2mem.bits.pc := preg.pc
 
     io.ex2id.bypass_rc := Mux(killed, 0.U, preg.rc)
     io.ex2id.bypass_val := alu.io.out

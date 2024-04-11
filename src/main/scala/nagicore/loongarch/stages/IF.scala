@@ -25,7 +25,7 @@ class IF extends Module with Config{
         val ex2if = Flipped(new ex2ifIO)
     })
     val next_pc = Wire(UInt(XLEN.W))
-    val pc = RegEnable(next_pc, PC_START, !io.if2id.stall)
+    val pc = RegEnable(next_pc, PC_START-4.U, !io.if2id.stall)
     val pc4 = pc+4.U
     next_pc := Mux(io.ex2if.br_take, io.ex2if.br_pc,
                     pc4
@@ -33,15 +33,20 @@ class IF extends Module with Config{
     
     io.if2id.bits.pc := pc
 
+    // iram is not valid until the second cycle
+    val started = RegNext(RegNext(true.B, false.B), false.B)
+
     val iram = Module(new DPIC_SRAM(XLEN, XLEN))
     iram.io.addr    := next_pc
     iram.io.clk     := clock
     iram.io.rst     := reset
-    iram.io.en      := true.B
+    iram.io.en      := RegNext(true.B, false.B)
     iram.io.wmask   := 0.U
     iram.io.wdata   := DontCare
-    io.if2id.bits.instr  := iram.io.rdata
-    // iram is not valid until the second cycle
-    val started = RegNext(RegNext(true.B, false.B), false.B)
+
+    val stall_stall = RegNext(io.if2id.stall)
+    val rdata_pre = RegEnable(iram.io.rdata, !stall_stall)
+    io.if2id.bits.instr  := Mux(stall_stall, rdata_pre, iram.io.rdata)
+
     io.if2id.bits.valid  := started
 }
