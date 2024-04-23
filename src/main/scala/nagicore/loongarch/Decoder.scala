@@ -176,14 +176,14 @@ class Decoder extends Module with Config{
     def imm_gen(inst: UInt, imm_type: UInt): UInt = {
         val imm = Wire(UInt(32.W))
         import DecoderMap.ImmType._
-        imm := Flags.MuxCase(imm_type, Seq(
+        imm := Flags.CasesMux(imm_type, Seq(
             si12    -> Cat(Fill(20, inst(21)), inst(21, 10)),
             si20    -> Cat(inst(24, 5), 0.U(12.W)),
             ui12    -> Cat(0.U(20.W), inst(21, 10)),
             ui5     -> Cat(0.U(27.W), inst(14, 10)),
             offs26  -> Cat(Fill(4, inst(9)), inst(9, 0), inst(25, 10), 0.U(2.W)),
             offs16  -> Cat(Fill(14, inst(25)), inst(25, 10), 0.U(2.W)),
-        ))
+        ), 0.U)
         imm
     }
     
@@ -197,22 +197,22 @@ class Decoder extends Module with Config{
 
     val rb_type = decode_signal("regB_sel")
 
-    io.rb := Flags.MuxCase(rb_type, Seq(
+    io.rb := Flags.CasesMux(rb_type, Seq(
         DecoderMap.regType.rj   -> rj,
         DecoderMap.regType.rk   -> rk,
         DecoderMap.regType.rd   -> rd,
         DecoderMap.regType.x    -> 0.U,
         DecoderMap.regType.num1 -> 1.U,
-    ))
+    ), 0.U)
 
     val rc_type = decode_signal("regC_sel")
 
-    io.rc := Flags.MuxCase(rc_type, Seq(
+    io.rc := Flags.CasesMux(rc_type, Seq(
         DecoderMap.regType.rj   -> rj,
         DecoderMap.regType.rk   -> rk,
         DecoderMap.regType.rd   -> rd,
         DecoderMap.regType.x    -> 0.U,
         DecoderMap.regType.num1 -> 1.U,
-    ))
+    ), 0.U)
     
 }

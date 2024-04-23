@@ -11,4 +11,6 @@ compile_commands.json
 /.idea
 *.iml
 # *.drawio
+*.dtmp
 *.bkp
+/test_run_dir

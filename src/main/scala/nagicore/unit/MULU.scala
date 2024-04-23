@@ -1,0 +1,89 @@
+package nagicore.unit
+
+import chisel3._
+import chisel3.util._
+import nagicore.utils._
+
+object MULU_IMP extends Enumeration {
+    type MULU_IMP = Value
+    val synthesizer, oneBitShift, xsArrayMul = Value
+}
+
+object MULU_OP{
+    val MUL     = ALU_OP.MUL.takeRight(2)
+    val MULH    = ALU_OP.MULH.takeRight(2)
+    val MULHU   = ALU_OP.MULHU.takeRight(2)
+}
+
+class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.xsArrayMul) extends Module{
+    val io = IO(new Bundle{
+        val a   = Input(UInt(dataBits.W))
+        val b   = Input(UInt(dataBits.W))
+        val op  = Input(UInt(2.W))
+        val out = Output(UInt(dataBits.W))
+        val vaild = Input(Bool())
+        val busy = Output(Bool())
+    })
+    imp_way match {
+        case MULU_IMP.xsArrayMul => {
+            import nagicore.unit.Xiangshan.ArrayMulDataModule
+            val arrayMul = Module(new ArrayMulDataModule(dataBits+1))
+            arrayMul.io.a := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.a(dataBits-1)) ## io.a
+            arrayMul.io.b := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.b(dataBits-1)) ## io.b
+            val valid_reg1 = RegNext(io.vaild)
+            arrayMul.io.regEnables(0) := io.vaild
+            arrayMul.io.regEnables(1) := valid_reg1
+            val res = arrayMul.io.result
+            io.out := Flags.CasesMux(io.op, Seq(
+                MULU_OP.MUL     -> res(31, 0),
+                MULU_OP.MULH    -> SignExt(res(63, 32), dataBits),
+                MULU_OP.MULHU   -> res(63, 32),
+            ), 0.U)
+            io.busy := io.vaild || valid_reg1
+        }
+        case _ => {
+            io.busy := false.B
+            io.out := Flags.CasesMux(io.op, Seq(
+                MULU_OP.MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
+                MULU_OP.MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
+                MULU_OP.MULHU   -> (io.a * io.b)(63, 32),
+            ), 0.U)
+        }
+    }
+    // if(imp_way == MULU_IMP.synthesizer){
+
+    // }else{
+    //     // TODO
+    //     /*
+    //     原理：
+    //     n位数和n位数的乘法，Booth乘法将其转换为n/2个2*n位数（即部分积）相加，
+    //     而华莱士树再将其转换为2*n个n/2 bits华莱士树，最终转换成两个2*n位数的加法，
+    //     其中，每个n/2 bits华莱士树，有n/2个一位数相加，
+    //      */
+    //     // x * y
+    //     def booth2(x: UInt, y: UInt, n: Int, yi: Int) =  {
+    //         assert(yi>=1&&yi<=y.getWidth-1)
+    //         val t = WireDefault(x)
+    //         switch(y(yi+1,yi-1)){
+    //             is(0.U){ t := 0.U }
+    //             is(3.U){ t := x(n-2, 0) ## 0.U(1.W) }
+    //             is(4.U){ t := x(n-2, 0) ## 0.U(1.W) }
+    //             is(7.U){ t := 0.U }
+    //         }
+    //         Mux(y(yi+1), ~t + 1.U, t)
+    //     }
+    //     // Carry-Save Adder
+    //     def CSA(a: UInt, b: UInt, cin: UInt) = {
+    //         assert(a.getWidth==b.getWidth&&b.getWidth==cin.getWidth)
+    //         val res = Vec(2, UInt(a.getWidth.W))
+    //         val a_xor_b = a ^ b
+    //         val a_and_b = a & b
+    //         val sum = a_xor_b ^ cin
+    //         val cout = a_and_b | (a_xor_b & cin)
+    //         res(0) := sum
+    //         res(1) := cout
+    //         res
+    //     }
+    // }
+
+}

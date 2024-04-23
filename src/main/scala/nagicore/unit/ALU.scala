@@ -48,11 +48,13 @@ object ALU_OP{
 }
 
 class ALUIO(dataBits: Int) extends Bundle{
-    val a   = Input(UInt(dataBits.W))
-    val b   = Input(UInt(dataBits.W))
-    val op  = Input(ALU_OP())
-    val sum = Output(UInt(dataBits.W))
-    val out = Output(UInt(dataBits.W))
+    val a       = Input(UInt(dataBits.W))
+    val b       = Input(UInt(dataBits.W))
+    val op      = Input(ALU_OP())
+    val sum     = Output(UInt(dataBits.W))
+    val out     = Output(UInt(dataBits.W))
+    val valid   = Input(Bool())
+    val busy    = Output(Bool())
 }
 
 class ALU(dataBits: Int) extends Module {
@@ -67,9 +69,33 @@ class ALU(dataBits: Int) extends Module {
     val or      = io.a | io.b
 
     io.sum := sum
-
     import ALU_OP._
-    io.out := Flags.MuxCase(io.op, Seq(
+
+    val mulu = Module(new MULU(dataBits))
+    mulu.io.a := io.a
+    mulu.io.b := io.b
+    mulu.io.op := io.op(1, 0)
+    mulu.io.vaild := io.valid && Flags.CasesMux(io.op, Seq(
+        MUL     -> true.B,
+        MULH    -> true.B,
+        MULHU   -> true.B,
+    ), false.B)
+
+    val divu = Module(new DIVU(dataBits))
+    divu.io.a := io.a
+    divu.io.b := io.b
+    divu.io.signed := io.op(0)
+    divu.io.valid := io.valid && Flags.CasesMux(io.op, Seq(
+        DIV     -> true.B,
+        DIVU    -> true.B,
+        MOD     -> true.B,
+        MODU    -> true.B,
+    ), false.B)
+
+    // must assert when mul or div type comes immediately or can not stall instrs from pre stage
+    io.busy := mulu.io.busy || divu.io.busy || mulu.io.vaild || divu.io.valid
+
+    io.out := Flags.CasesMux(io.op, Seq(
         ADD     -> sum,
         SUB     -> mins(dataBits-1, 0),
         SL      -> (io.a << shamt),
@@ -83,13 +109,21 @@ class ALU(dataBits: Int) extends Module {
         COPY_A  -> io.a,
         COPY_B  -> io.b,
         NOR     -> (~or),
+
+        MUL     -> mulu.io.out,
+        MULH    -> mulu.io.out,
+        MULHU   -> mulu.io.out,
+        DIV     -> divu.io.quo,
+        DIVU    -> divu.io.quo,
+        MOD     -> divu.io.rem,
+        MODU    -> divu.io.rem,
         // for test
-        MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
-        MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
-        MULHU   -> (io.a * io.b)(63, 32),
-        DIV     -> (io.a.asSInt % io.b.asSInt)(31, 0).asUInt,
-        DIVU    -> (io.a % io.b)(31, 0),
-        MOD     -> (io.a.asSInt % io.b.asSInt)(31, 0).asUInt,
-        MODU    -> (io.a % io.b)(31, 0),
-    ))
+        // MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
+        // MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
+        // MULHU   -> (io.a * io.b)(63, 32),
+        // DIV     -> (io.a.asSInt / io.b.asSInt)(31, 0).asUInt,
+        // DIVU    -> (io.a / io.b)(31, 0),
+        // MOD     -> (io.a.asSInt % io.b.asSInt)(31, 0).asUInt,
+        // MODU    -> (io.a % io.b)(31, 0),
+    ), 0.U)
 }

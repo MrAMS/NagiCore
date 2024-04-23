@@ -45,29 +45,35 @@ class EX extends Module with Config{
         val ex2mem = new ex2memIO
         val ex2id = new ex2idIO
     })
+    // stall signal from next stage
+    val stall_nxt = io.ex2mem.stall
+    
+    val alu = Module(new ALU(XLEN))
+    val busy = alu.io.busy
 
+    // accept instrs from pre stage
+    val accp_pre = !(stall_nxt || busy)
     // pipeline registers
-    val preg = RegEnable(io.id2ex.bits, !io.ex2mem.stall)
+    val preg = RegEnable(io.id2ex.bits, accp_pre)
 
-    // max kill 3 cycs
-    val kill_nxt = RegEnable(0.U(2.W), !io.ex2mem.stall)
-    val killed = kill_nxt =/= 0.U || !preg.valid
+    // kill following instrs, max 3 instrs
+    val kill_nxt = RegEnable(0.U(2.W), accp_pre)
+    // stall pre stages in force
+    val stall_pre_counter = RegEnable(0.U(2.W), accp_pre)
 
-    val is_ld : Bool = !killed && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
+    val valid_instr = kill_nxt === 0.U && preg.valid && !busy
+    val is_ld : Bool = valid_instr && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
 
-    val stall_nxt = RegEnable(0.U(2.W), !io.ex2mem.stall)
+    io.ex2mem.bits.valid := valid_instr
     // must stall when ld comes immediately unlike kill
-    val stalled = stall_nxt =/= 0.U || is_ld
-
-    io.ex2mem.bits.valid := !killed && preg.valid
-    io.id2ex.stall := stalled || io.ex2mem.stall
+    io.id2ex.stall := stall_pre_counter =/= 0.U || is_ld || busy || stall_nxt
     
     val bru = Module(new BRU_SINGLE(XLEN))
     bru.io.a := preg.ra_val
     bru.io.b := preg.rb_val
     bru.io.br_type := preg.br_type
 
-    val take : Bool = bru.io.br_take && (!killed)
+    val take : Bool = bru.io.br_take && valid_instr
     io.ex2if.br_take := take
 
 
@@ -78,9 +84,9 @@ class EX extends Module with Config{
                     )
                 )
                 // we must stall 2 cycs until ld instr get value from mem and reach wb stage
-    stall_nxt := Mux(is_ld, 1.U,
-                        Mux(stall_nxt===0.U, 0.U,
-                            stall_nxt-1.U
+    stall_pre_counter := Mux(is_ld, 1.U,
+                        Mux(stall_pre_counter===0.U, 0.U,
+                            stall_pre_counter-1.U
                         )
                     )
 
@@ -97,7 +103,9 @@ class EX extends Module with Config{
         CtrlFlags.aluBSel.imm  -> preg.imm,
         CtrlFlags.aluBSel.num4 -> 4.U,
     ))
-    val alu = Module(new ALU(XLEN))
+
+    // must assert for only one cycle
+    alu.io.valid := preg.valid && RegNext(accp_pre)
     alu.io.a := alu_a
     alu.io.b := alu_b
     alu.io.op := preg.alu_op
@@ -113,6 +121,6 @@ class EX extends Module with Config{
 
     io.ex2mem.bits.pc := preg.pc
 
-    io.ex2id.bypass_rc := Mux(killed, 0.U, preg.rc)
+    io.ex2id.bypass_rc := Mux(valid_instr, preg.rc, 0.U)
     io.ex2id.bypass_val := alu.io.out
 }
