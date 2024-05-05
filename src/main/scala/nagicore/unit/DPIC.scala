@@ -3,14 +3,10 @@ import chisel3._
 import chisel3.util._
 
 class DPIC_SRAM(addr_width: Int, data_width: Int) extends BlackBox(Map("ADDR_WIDTH" -> addr_width, "DATA_WIDTH" -> data_width)) with HasBlackBoxResource{
-    val io = IO(new Bundle{
+    val io = IO(new Bundle {
         val clk     = Input(Clock())
         val rst     = Input(Bool())
-        val en      = Input(Bool())
-        val wmask   = Input(UInt(log2Ceil(data_width).W))
-        val addr    = Input(UInt(addr_width.W))
-        val wdata   = Input(UInt(data_width.W))
-        val rdata   = Output(UInt(data_width.W))
+        val data    = new SRAM_IO(addr_width, data_width)
     })
     addResource("/sv/DPIC_SRAM.sv")
     addResource("/sv/DPIC_TYPES_DEFINE.sv")

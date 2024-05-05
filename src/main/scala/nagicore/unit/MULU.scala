@@ -15,6 +15,16 @@ object MULU_OP{
     val MULHU   = ALU_OP.MULHU.takeRight(2)
 }
 
+/**
+  * 乘法器
+  *
+  * @param dataBits 位宽
+  * @param imp_way  实现方法，有3种实现方式，分别为：
+  *                   synthesizer: 直接使用*，依靠综合器生成单周期乘法器
+  *                   oneBitShift: 一位移位乘法实现
+  *                   xsArrayMul:  使用香山的三周期ArrayMulDataModule实现
+  * @note 注意valid信号只拉高一周期即可，busy在下一个周期开始拉高，直到乘法运算结束时拉低
+  */
 class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.xsArrayMul) extends Module{
     val io = IO(new Bundle{
         val a   = Input(UInt(dataBits.W))

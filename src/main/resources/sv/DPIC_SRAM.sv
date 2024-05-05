@@ -8,27 +8,33 @@ module DPIC_SRAM #(
 ) (
     input   wire clk,
     input   wire rst,
-    input   wire en,
-    input   wire [$clog2(DATA_WIDTH)-1:0] wmask,
-    input   wire [ADDR_WIDTH-1:0] addr,
-    input   wire [DATA_WIDTH-1:0] wdata,
-    output  reg [DATA_WIDTH-1:0] rdata
+    input   wire data_req,
+    input   wire [ADDR_WIDTH-1:0] data_addr,
+    input   wire [$clog2(DATA_WIDTH)-1:0] data_wmask,
+    input   wire [1:0] data_size,
+    input   wire [DATA_WIDTH-1:0] data_wdata,
+    output  reg [DATA_WIDTH-1:0] data_rdata,
+    output  wire data_stall,
+    output  wire data_valid
 );
 wire [DATA_WIDTH-1:0] rdata_wire;
 
 // assign rdata = rdata_reg;
 
+assign data_valid = 1;
+assign data_stall = 0;
+
 
 always @(posedge clk) begin
     if (rst) begin
-        rdata <= 0;
+        data_rdata <= 0;
     end else begin
-        if (en) begin
-            if(|wmask) begin
-                dpic_bus_write(addr, {{8-$clog2(DATA_WIDTH){1'b0}}, wmask}, wdata);
+        if (data_req) begin
+            if(|data_wmask) begin
+                dpic_bus_write(data_addr, {{8-$clog2(DATA_WIDTH){1'b0}}, data_wmask}, data_wdata);
             end else begin
-                dpic_bus_read(addr, 4, rdata_wire);
-                rdata <= rdata_wire;
+                dpic_bus_read(data_addr, {6'b0, data_size}, rdata_wire);
+                data_rdata <= rdata_wire;
             end
         end
     end
