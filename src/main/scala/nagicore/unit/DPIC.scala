@@ -1,12 +1,15 @@
 package nagicore.unit
 import chisel3._
 import chisel3.util._
+import nagicore.bus.SyncRamIO
 
+
+// TODO delete
 class DPIC_SRAM(addr_width: Int, data_width: Int) extends BlackBox(Map("ADDR_WIDTH" -> addr_width, "DATA_WIDTH" -> data_width)) with HasBlackBoxResource{
     val io = IO(new Bundle {
         val clk     = Input(Clock())
         val rst     = Input(Bool())
-        val data    = new SRAM_IO(addr_width, data_width)
+        val data    = new CachePipedIO(addr_width, data_width, new SyncRamIO(addr_width, data_width))
     })
     addResource("/sv/DPIC_SRAM.sv")
     addResource("/sv/DPIC_TYPES_DEFINE.sv")

@@ -10,3 +10,9 @@ object SignExt {
     if (aLen >= len) a(len-1,0) else Cat(Fill(len - aLen, signBit), a)
   }
 }
+
+object isPowerOf2{
+  def apply(x: Int): Boolean = {
+    x > 0 && (x & (x-1)) == 0
+  }
+}

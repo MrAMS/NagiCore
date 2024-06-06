@@ -15,13 +15,14 @@ module DPIC_SRAM #(
     input   wire [DATA_WIDTH-1:0] data_wdata,
     output  reg [DATA_WIDTH-1:0] data_rdata,
     output  wire data_stall,
-    output  wire data_valid
+    input   wire data_uncache
+    // output  wire data_valid
 );
 wire [DATA_WIDTH-1:0] rdata_wire;
 
 // assign rdata = rdata_reg;
 
-assign data_valid = 1;
+// assign data_valid = 1;
 assign data_stall = 0;
 
 

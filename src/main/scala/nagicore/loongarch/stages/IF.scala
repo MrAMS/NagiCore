@@ -27,7 +27,7 @@ class IF extends Module with Config{
     val iram = Module(new DPIC_SRAM(XLEN, XLEN))
 
     val next_pc = Wire(UInt(XLEN.W))
-    val pc = RegEnable(next_pc, PC_START-4.U, !io.if2id.stall && !iram.io.data.stall)
+    val pc = RegEnable(next_pc, PC_START-4.U, !io.if2id.stall && !iram.io.data.back.stall)
     val pc4 = pc+4.U
     next_pc := Mux(io.ex2if.br_take, io.ex2if.br_pc,
                     pc4
@@ -37,18 +37,21 @@ class IF extends Module with Config{
 
     // iram is not valid until the second cycle
     val started = RegNext(RegNext(true.B, false.B), false.B)
-
-    iram.io.data.addr    := next_pc
-    iram.io.clk         := clock
-    iram.io.rst         := reset
-    iram.io.data.req    := RegNext(true.B, false.B)
-    iram.io.data.wmask  := 0.U
-    iram.io.data.wdata  := DontCare
-    iram.io.data.size   := 2.U
+    // TODO
+    iram.io := DontCare
+//    iram.io.data.front.addr    := next_pc
+//    iram.io.clk             := clock
+//    iram.io.rst             := reset
+//    iram.io.data.front.valid   := RegNext(true.B, false.B)
+//    iram.io.data.front.wmask   := 0.U
+//    iram.io.data.front.wdata   := DontCare
+//    iram.io.data.front.size    := 2.U
+//    iram.io.data.front.uncache := false.B
 
     val stall_stall = RegNext(io.if2id.stall)
-    val rdata_pre = RegEnable(iram.io.data.rdata, !stall_stall)
-    io.if2id.bits.instr  := Mux(stall_stall, rdata_pre, iram.io.data.rdata)
+    // TODO
+//    val rdata_pre = RegEnable(iram.io.data.back.rdata, !stall_stall)
+//    io.if2id.bits.instr  := Mux(stall_stall, rdata_pre, iram.io.data.back.rdata)
 
-    io.if2id.bits.valid  := started && iram.io.data.valid
+    io.if2id.bits.valid  := started && !iram.io.data.back.stall
 }
