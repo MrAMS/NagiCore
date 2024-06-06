@@ -29,33 +29,34 @@ class CacheMem(width: Int, depth: Int, imp: CacheMemType.CacheMemType=CacheMemTy
     }
 }
 
-class CachePipedIOFrontBits[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: T) extends Bundle{
+class CachePipedIOFrontBits[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T) extends Bundle{
     val valid     = Bool()
     val addr      = UInt(addrBits.W)
     val wmask     = UInt((dataBits/8).W)
     val size      = UInt(2.W)
     val wdata     = UInt(dataBits.W)
     val uncache   = Bool()
-    val pipedata  = pipedataT
+    val pipedata  = pipedataT()
 }
 
-class CachePipedIOFront[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: T) extends Bundle{
+class CachePipedIOFront[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T) extends Bundle{
     val bits        = Input(new CachePipedIOFrontBits[T](addrBits, dataBits, pipedataT))
     val stall       = Output(Bool()) 
 }
 
-class CachePipedIOBackBits[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: T) extends Bundle{
+class CachePipedIOBackBits[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T) extends Bundle{
     val valid       = Bool()
     val rdata       = UInt(dataBits.W)
-    val pipedata    = pipedataT
+    val pipedata_s1 = pipedataT()
+    val pipedata_s2 = pipedataT()
 }
 
-class CachePipedIOBack[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: T) extends Bundle{
+class CachePipedIOBack[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T) extends Bundle{
     val bits        = Output(new CachePipedIOBackBits[T](addrBits, dataBits, pipedataT))
     val stall       = Input(Bool())
 }
 
-class CachePipedIO[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: T) extends Bundle{
+class CachePipedIO[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T) extends Bundle{
     val front = new CachePipedIOFront[T](addrBits, dataBits, pipedataT)
     val back = new CachePipedIOBack[T](addrBits, dataBits, pipedataT)
 }
@@ -75,8 +76,9 @@ class CachePipedIO[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: T) exte
   * @param blockWords   块字个数
   * @param pipedataT    流水线其他信号
   */
-class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int, pipedataT: T) extends Module{
+class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int, pipedataT: () => T) extends Module{
     require(isPowerOf2(ways))
+    require(isPowerOf2(dataBits))
 
     val io = IO(new Bundle{
         val axi = new AXI4IO(addrBits, dataBits)
@@ -90,7 +92,6 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     val len_byte = log2Ceil(dataBits/8)
     val num_word = blockWords
     val len_word = log2Ceil(num_word)
-    assert(log2Ceil(blockWords*dataBits/8)==len_word+len_byte)
     val len_idx = log2Ceil(sets)
     val len_tag = addrBits - len_idx - len_word - len_byte
     val beats_len = num_word
@@ -152,7 +153,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     // stage2 pipeline registers
     val preg2 = RegEnable(preg1, pipego)
     object Stage2State extends ChiselEnum {
-        val lookup, writeback, replace, replaceEnd, uncache, uncacheEnd = Value
+        val lookup, writeback, replace, replaceEnd, uncacheRead, uncacheEnd = Value
     }
     // stage2 state
     val state_s2 = RegInit(Stage2State.lookup)
@@ -172,7 +173,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     val rdirty = RegEnable(VecInit.tabulate(ways){ i =>
             dirty_io(i).dout.asBool
         }, pipego)
-    
+
     pipego :=
         (
         // 连续命中
@@ -181,19 +182,25 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
         !preg2.valid ||
         // 替换完成
         state_s2 === Stage2State.replaceEnd ||
-        // 
+        // uncache访问
         state_s2 === Stage2State.uncacheEnd
         ) &&
         // 下一级无阻塞请求
         !io.master.back.stall
-    
+
     val rdata_hit = WireDefault(0.U(dataBits.W))
     val rdata_replace = Reg(UInt(dataBits.W))
+    val rdata_uncache = Reg(UInt(dataBits.W))
 
     io.master.front.stall := !pipego
     io.master.back.bits.valid := pipego && preg2.valid
-    io.master.back.bits.rdata := Mux(state_s2 === Stage2State.replaceEnd, rdata_replace, rdata_hit)
-    io.master.back.bits.pipedata := preg2.pipedata
+//    io.master.back.bits.rdata := Mux(state_s2 === Stage2State.replaceEnd, rdata_replace, rdata_hit)
+    io.master.back.bits.rdata := MuxCase(rdata_hit, Seq(
+        (state_s2 === Stage2State.replaceEnd) -> rdata_replace,
+        (state_s2 === Stage2State.uncacheEnd) -> rdata_uncache
+    ))
+    io.master.back.bits.pipedata_s1 := preg1.pipedata
+    io.master.back.bits.pipedata_s2 := preg2.pipedata
 
     val addr_s2 = preg2.addr
     // TODO: VIPT, let TLB pass in real tag
@@ -250,22 +257,39 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                         writeSyncRam(dirty_io(hit_way), addr_idx_s2, 1.U(1.W))
                     }otherwise{
                         // 命中读
-                        // 当上一个hit write同一个地址时，需要前递
-                        val bypass = hit_rw_bypass_valid && hit_rw_bypass_addr === addr_s2
-                        rdata_hit := Mux(bypass,
+                        // 当上一个hit write是同一个地址时，需要前递
+                        val hit_rw_bypass_need = hit_rw_bypass_valid && hit_rw_bypass_addr === addr_s2
+                        rdata_hit := Mux(hit_rw_bypass_need,
                             hit_rw_bypass_val,
                             rdatas(hit_way)(addr_word_s2)
                         )
                     }
                     state_s2 := Stage2State.lookup
                 }.otherwise{
-                    active_way := random_way
-                    when(rdirty(random_way)&&rvalid(random_way)){
-                        state_s2 := Stage2State.writeback
+                    when(preg2.uncache){
+                        when(preg2.wmask.orR){
+                            axi_w_agent.io.cmd.in.addr := preg2.addr
+                            axi_w_agent.io.cmd.in.req := true.B
+                            axi_w_agent.io.cmd.in.wdata(0) := preg2.wdata
+                            axi_w_agent.io.cmd.in.wmask(0) := preg2.wmask
+                            axi_w_agent.io.cmd.in.size := preg2.size
+                            axi_w_agent.io.cmd.in.len := 0.U
+                            state_s2 := Stage2State.uncacheEnd
+                        }.otherwise{
+                            axi_r_agent.io.cmd.in.req := true.B
+                            axi_r_agent.io.cmd.in.addr := preg2.addr
+                            axi_r_agent.io.cmd.in.size := preg2.size
+                            axi_r_agent.io.cmd.in.len := 0.U
+                            state_s2 := Stage2State.uncacheRead
+                        }
                     }.otherwise{
-                        load_miss_lines()
+                        active_way := random_way
+                        when(rdirty(random_way) && rvalid(random_way)) {
+                            state_s2 := Stage2State.writeback
+                        }.otherwise {
+                            load_miss_lines()
+                        }
                     }
-                    
                 }
             }
         }
@@ -280,7 +304,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                 axi_w_agent.io.cmd.in.wmask := VecInit.fill(blockWords)(1.U)
                 axi_w_agent.io.cmd.in.size := log2Up(dataBits).U
                 axi_w_agent.io.cmd.in.len := (blockWords-1).U
-                
+
                 load_miss_lines()
             }.otherwise{
                 state_s2 := Stage2State.writeback
@@ -289,7 +313,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
         is(Stage2State.replace){
             when(axi_r_agent.io.cmd.out.ready){
                 val word_i = axi_r_agent.io.cmd.out.order
-                val wdata_active = Mux(word_i === addr_word_s2, 
+                val wdata_active = Mux(word_i === addr_word_s2,
                     Cat((0 until (dataBits/8)).reverse.map(i =>
                         Mux(preg2.wmask(i),
                             preg2.wdata(i*8+7, i*8),
@@ -298,7 +322,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                     )),
                     axi_r_agent.io.cmd.out.rdata
                 )
-                
+
                 writeSyncRam(data_bank_io(active_way)(word_i), addr_idx_s2, wdata_active)
 
                 when(word_i === addr_word_s2){
@@ -318,6 +342,20 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                 state_s2 := Stage2State.lookup
             }
         }
+        is(Stage2State.uncacheRead){
+            // 等待代理空闲
+            when(axi_r_agent.io.cmd.out.ready){
+                rdata_uncache := axi_r_agent.io.cmd.out.rdata
+                state_s2 := Stage2State.uncacheEnd
+            }
+        }
+        is(Stage2State.uncacheEnd){
+            // 等待下一级准备好接受
+            when(!io.master.back.stall){
+                state_s2 := Stage2State.lookup
+            }
+        }
+
     }
 }
 

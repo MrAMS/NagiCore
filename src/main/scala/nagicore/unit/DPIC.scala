@@ -9,7 +9,7 @@ class DPIC_SRAM(addr_width: Int, data_width: Int) extends BlackBox(Map("ADDR_WID
     val io = IO(new Bundle {
         val clk     = Input(Clock())
         val rst     = Input(Bool())
-        val data    = new CachePipedIO(addr_width, data_width, new SyncRamIO(addr_width, data_width))
+        val data    = new CachePipedIO(addr_width, data_width, () => new SyncRamIO(addr_width, data_width))
     })
     addResource("/sv/DPIC_SRAM.sv")
     addResource("/sv/DPIC_TYPES_DEFINE.sv")
