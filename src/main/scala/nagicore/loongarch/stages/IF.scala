@@ -2,14 +2,15 @@ package nagicore.loongarch.stages
 
 import chisel3._
 import chisel3.util._
-
+import nagicore.bus.AXI4IO
 import nagicore.loongarch.Config
-import nagicore.unit.DPIC_SRAM
+import nagicore.unit.{CachePiped, DPIC_SRAM}
 import nagicore.loongarch.CtrlFlags
 
 class if2idBits extends Bundle with Config{
-    val instr       = UInt(XLEN.W)
     val pc          = UInt(XLEN.W)
+    val pred_nxt_pc = UInt(XLEN.W)
+    val instr       = UInt(XLEN.W)
     
     val valid       = Bool()
 }
@@ -23,35 +24,37 @@ class IF extends Module with Config{
     val io = IO(new Bundle {
         val if2id = new if2idIO
         val ex2if = Flipped(new ex2ifIO)
+        val isram = new AXI4IO(XLEN, XLEN)
     })
-    val iram = Module(new DPIC_SRAM(XLEN, XLEN))
+    // 2-stages cache
+    val icache = Module(new CachePiped(XLEN, XLEN, 2, 512, 4, () => new if2idBits()))
+    icache.io.axi <> io.isram
 
-    val next_pc = Wire(UInt(XLEN.W))
-    val pc = RegEnable(next_pc, PC_START-4.U, !io.if2id.stall && !iram.io.data.back.stall)
+    val pred_nxt_pc = Wire(UInt(XLEN.W))
+    val pc = RegEnable(pred_nxt_pc, PC_START, !icache.io.master.front.stall)
     val pc4 = pc+4.U
-    next_pc := Mux(io.ex2if.br_take, io.ex2if.br_pc,
+    pred_nxt_pc := Mux(io.ex2if.br_take, io.ex2if.br_pc,
                     pc4
                 )
-    
-    io.if2id.bits.pc := pc
 
-    // iram is not valid until the second cycle
-    val started = RegNext(RegNext(true.B, false.B), false.B)
-    // TODO
-    iram.io := DontCare
-//    iram.io.data.front.addr    := next_pc
-//    iram.io.clk             := clock
-//    iram.io.rst             := reset
-//    iram.io.data.front.valid   := RegNext(true.B, false.B)
-//    iram.io.data.front.wmask   := 0.U
-//    iram.io.data.front.wdata   := DontCare
-//    iram.io.data.front.size    := 2.U
-//    iram.io.data.front.uncache := false.B
+    /**
+     *        -----Cache-----
+     * pre -> IMEM1 -> IMEM2
+     */
 
-    val stall_stall = RegNext(io.if2id.stall)
-    // TODO
-//    val rdata_pre = RegEnable(iram.io.data.back.rdata, !stall_stall)
-//    io.if2id.bits.instr  := Mux(stall_stall, rdata_pre, iram.io.data.back.rdata)
+    icache.io.master.front.bits.addr := pc
+    icache.io.master.front.bits.uncache := false.B
+    icache.io.master.front.bits.wdata := DontCare
+    icache.io.master.front.bits.size := 2.U
+    icache.io.master.front.bits.wmask := 0.U
+    icache.io.master.front.bits.valid := true.B
+    icache.io.master.front.bits.pipedata.pc := pc
+    icache.io.master.front.bits.pipedata.pred_nxt_pc := pred_nxt_pc
+    icache.io.master.front.bits.pipedata.instr := DontCare
+    icache.io.master.front.bits.pipedata.valid := DontCare
 
-    io.if2id.bits.valid  := started && !iram.io.data.back.stall
+    icache.io.master.back.stall := io.if2id.stall
+    io.if2id.bits <> icache.io.master.back.bits.pipedata_s2
+    io.if2id.bits.instr := icache.io.master.back.bits.rdata
+    io.if2id.bits.valid := icache.io.master.back.bits.valid
 }

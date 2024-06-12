@@ -64,10 +64,10 @@ class CachePipedIO[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T
 /**
   * 阻塞式两级流水线Cache
   * @pipeline
-  *                    stage1             stage2
+  *                   stage1             stage2
   * EX                -> MEM1            -> MEM2           -> WB
   * 向SRAM发出地址      读SRAM和TLB         比较Tag，选择数据   字节选择，符号扩展
-  *                     preg1               preg2
+  *                   preg1              preg2
   *
   * @param addrBits
   * @param dataBits
@@ -153,7 +153,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     // stage2 pipeline registers
     val preg2 = RegEnable(preg1, pipego)
     object Stage2State extends ChiselEnum {
-        val lookup, writeback, replace, replaceEnd, uncacheRead, uncacheEnd = Value
+        val lookup, writeback, replace, replaceEnd, uncacheWait, uncacheRead, uncacheEnd = Value
     }
     // stage2 state
     val state_s2 = RegInit(Stage2State.lookup)
@@ -238,6 +238,28 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
         io.din := data
     }
 
+    def wait_uncache_ready() = {
+        when(preg2.wmask.orR){
+            when(axi_w_agent.io.cmd.out.ready){
+                axi_w_agent.io.cmd.in.addr := preg2.addr
+                axi_w_agent.io.cmd.in.req := true.B
+                axi_w_agent.io.cmd.in.wdata(0) := preg2.wdata
+                axi_w_agent.io.cmd.in.wmask(0) := preg2.wmask
+                axi_w_agent.io.cmd.in.size := preg2.size
+                axi_w_agent.io.cmd.in.len := 0.U
+                state_s2 := Stage2State.uncacheEnd
+            }
+        }.otherwise{
+            when(axi_r_agent.io.cmd.out.ready){
+                axi_r_agent.io.cmd.in.req := true.B
+                axi_r_agent.io.cmd.in.addr := preg2.addr
+                axi_r_agent.io.cmd.in.size := preg2.size
+                axi_r_agent.io.cmd.in.len := 0.U
+                state_s2 := Stage2State.uncacheRead
+            }
+        }
+    }
+
     switch(state_s2){
         is(Stage2State.lookup){
             when(preg2.valid){
@@ -267,21 +289,8 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                     state_s2 := Stage2State.lookup
                 }.otherwise{
                     when(preg2.uncache){
-                        when(preg2.wmask.orR){
-                            axi_w_agent.io.cmd.in.addr := preg2.addr
-                            axi_w_agent.io.cmd.in.req := true.B
-                            axi_w_agent.io.cmd.in.wdata(0) := preg2.wdata
-                            axi_w_agent.io.cmd.in.wmask(0) := preg2.wmask
-                            axi_w_agent.io.cmd.in.size := preg2.size
-                            axi_w_agent.io.cmd.in.len := 0.U
-                            state_s2 := Stage2State.uncacheEnd
-                        }.otherwise{
-                            axi_r_agent.io.cmd.in.req := true.B
-                            axi_r_agent.io.cmd.in.addr := preg2.addr
-                            axi_r_agent.io.cmd.in.size := preg2.size
-                            axi_r_agent.io.cmd.in.len := 0.U
-                            state_s2 := Stage2State.uncacheRead
-                        }
+                        wait_uncache_ready()
+                        // or just state_s2 := Stage2State.uncacheWait
                     }.otherwise{
                         active_way := random_way
                         when(rdirty(random_way) && rvalid(random_way)) {
@@ -342,6 +351,9 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                 state_s2 := Stage2State.lookup
             }
         }
+        is(Stage2State.uncacheWait){
+            wait_uncache_ready()
+        }
         is(Stage2State.uncacheRead){
             // 等待代理空闲
             when(axi_r_agent.io.cmd.out.ready){
@@ -358,54 +370,3 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
 
     }
 }
-
-    // // 发起Cache行读取
-    // def load_lines() = {
-        
-    //     data_bank.map(_.map(m => {
-    //         m.io.addr := addr_idx
-    //         m.io.en := true.B
-    //         m.io.we := false.B
-    //     }))
-    //     tag_v.map(m => {
-    //         m.io.addr := addr_idx
-    //         m.io.en := true.B
-    //         m.io.we := false.B
-    //     })
-    //     dirty.map(m => {
-    //         m.io.addr := addr_idx
-    //         m.io.en := true.B
-    //         m.io.we := false.B
-    //     })
-    // }
-    // // 开始新一轮Cache访问
-    // def new_cache_session() = {
-    //     load_lines()
-    //     preg2 := io.master.front
-    //     state_s2 := Stage2State.fetchlines
-    // }
-
-        // is(Stage2State.idle){
-        //     when(io.master.front.valid){
-        //         new_cache_session()
-        //     }otherwise{
-        //         state_s2 := Stage2State.idle
-        //     }
-        // }
-        // is(Stage2State.fetchlines){
-        //     rdatas := VecInit.tabulate(ways){ i =>
-        //         VecInit.tabulate(num_word){ j =>
-        //             data_bank(i)(j).io.dout
-        //         }
-        //     }
-        //     rtags := VecInit.tabulate(ways){ i =>
-        //         tag_v(i).io.dout(len_tag, 1)
-        //     }
-        //     rvalid := VecInit.tabulate(ways){ i =>
-        //         tag_v(i).io.dout(0).asBool
-        //     }
-        //     rdirty := VecInit.tabulate(ways){ i =>
-        //         dirty(i).io.dout.asBool
-        //     }
-        //     state_s2 := Stage2State.lookup
-        // }

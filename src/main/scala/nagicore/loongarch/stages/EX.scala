@@ -73,22 +73,27 @@ class EX extends Module with Config{
     bru.io.b := preg.rb_val
     bru.io.br_type := preg.br_type
 
-    val take : Bool = bru.io.br_take && valid_instr
-    io.ex2if.br_take := take
+    val br_pred_fail : Bool = bru.io.br_take && valid_instr
+    io.ex2if.br_take := br_pred_fail
 
 
                 // when branch take or ld instr, we must kill next 2 instrs from IF, ID stages
-    kill_nxt := Mux(take || is_ld, 2.U, 
-                    Mux(kill_nxt===0.U, 0.U,
-                        kill_nxt-1.U
+
+    kill_nxt := Mux(kill_nxt===0.U, 0.U,
+                    /* 当分支预测失败时，应该无视接下来4个周期的指令(IF,IMEM1,IMEM2,ID) */
+                    Mux(br_pred_fail, 4.U,
+                        /* 当遇到加载指令时，应该请求上一级阻塞2个周期，并且无视接下来2个周期的指令(DMEM1, DMEM2) */
+                        Mux(is_ld, 2.U,
+                            kill_nxt-1.U
+                        )
                     )
                 )
                 // we must stall 2 cycs until ld instr get value from mem and reach wb stage
-    stall_pre_counter := Mux(is_ld, 1.U,
-                        Mux(stall_pre_counter===0.U, 0.U,
-                            stall_pre_counter-1.U
+    stall_pre_counter := Mux(stall_pre_counter===0.U, 0.U,
+                            Mux(is_ld, 1.U,
+                                stall_pre_counter-1.U
+                            )
                         )
-                    )
 
     io.ex2if.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.bp(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
 

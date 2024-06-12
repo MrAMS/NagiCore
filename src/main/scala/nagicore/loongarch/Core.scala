@@ -2,6 +2,7 @@ package nagicore.loongarch
 
 import chisel3._
 import chisel3.util._
+import nagicore.bus.AXI4Slave
 import nagicore.loongarch.Config
 import nagicore.loongarch.stages._
 
@@ -11,19 +12,24 @@ class Core extends Module with Config{
         val rst = Input(Bool())
     })
 
-    val if_stage = Module(new IF)
-    val id_stage = Module(new ID)
-    val ex_stage = Module(new EX)
-    val mem_stage = Module(new MEM)
-    val wb_stage = Module(new WB)
+    val if_part = Module(new IF)
+    val id_part = Module(new ID)
+    val ex_part = Module(new EX)
+    val mem_part = Module(new MEM)
+    val wb_part = Module(new WB)
 
-    if_stage.io.if2id <> id_stage.io.if2id
-    id_stage.io.id2ex <> ex_stage.io.id2ex
-    ex_stage.io.ex2if <> if_stage.io.ex2if
-    ex_stage.io.ex2id <> id_stage.io.ex2id
-    ex_stage.io.ex2mem <> mem_stage.io.ex2mem
-    mem_stage.io.mem2id <> id_stage.io.mem2id
-    mem_stage.io.mem2wb <> wb_stage.io.mem2wb
-    wb_stage.io.wb2id <> id_stage.io.wb2id
-    wb_stage.io.stall_all := false.B
+    if_part.io.if2id <> id_part.io.if2id
+    id_part.io.id2ex <> ex_part.io.id2ex
+    ex_part.io.ex2if <> if_part.io.ex2if
+    ex_part.io.ex2id <> id_part.io.ex2id
+    ex_part.io.ex2mem <> mem_part.io.ex2mem
+    mem_part.io.mem2id <> id_part.io.mem2id
+    mem_part.io.mem2wb <> wb_part.io.mem2wb
+    wb_part.io.wb2id <> id_part.io.wb2id
+    wb_part.io.stall_all := false.B
+
+    val isram = Module(new AXI4Slave(XLEN, XLEN))
+    val dsram = Module(new AXI4Slave(XLEN, XLEN))
+    if_part.io.isram <> isram.io
+    mem_part.io.dsram <> dsram.io
 }

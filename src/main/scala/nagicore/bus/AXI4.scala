@@ -207,16 +207,15 @@ class AXI4ReadAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int) extends Modu
 
 
 /**
- * WIP
- * @param addrBits
- * @param dataBits
+ * AXI4 同步RAM从设备，第一个周期输入地址，第二个周期获得数据
+ * @param addrBits 地址宽度
+ * @param dataBits 数据宽度
  */
 class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
     val io = IO(Flipped(new AXI4IO(addrBits, dataBits)))
-    val sram = Module(new SyncRam(dataBits, 1 << addrBits))
-    sram.io.en := true.B
-    sram.io.we := false.B
-    
+    val sram = Module(new SyncRam(dataBits, 1 << addrBits, SyncRamType.DPIC))
+    sram.io.we := io.w.fire
+    sram.io.din := io.w.bits.data
 
     val raddr = Reg(UInt(addrBits.W))
     val rid   = Reg(UInt(4.W))
@@ -236,7 +235,7 @@ class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
     io.r.bits.resp := 0.U
     io.r.bits.data := sram.io.dout
 
-    val ws_idle :: ws_w :: ws_b :: nulls = Enum(3)
+    val ws_idle :: ws_w :: ws_b :: Nil = Enum(3)
     val ws = RegInit(ws_idle)
     val waddr = Reg(UInt(addrBits.W))
     val wid   = Reg(UInt(4.W))
@@ -248,8 +247,6 @@ class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
     }
     when(io.w.fire){
         waddr := waddr + 1.U
-        sram.io.din := io.w.bits.data
-        sram.io.we := true.B
         wlen := wlen - 1.U
         when(io.w.bits.last){
             ws := ws_b
@@ -263,7 +260,11 @@ class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
     io.aw.ready := wlen === 0.U
     io.w.ready := wlen =/= 0.U
     io.w.bits.last := wlen === 1.U
+    io.b.bits.id := wid
     io.b.valid := ws === ws_b
     io.b.bits.resp := 0.U
+
+    sram.io.addr := Mux(io.w.fire, waddr, raddr)
+    sram.io.en := wlen =/= 0.U || rlen =/= 0.U
 
 }

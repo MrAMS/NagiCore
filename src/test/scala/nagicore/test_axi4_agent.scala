@@ -55,7 +55,7 @@ class TestAXI4Agent extends AnyFlatSpec with ChiselScalatestTester{
             dut.io.cmd.in.len.poke(3.U)
             dut.io.cmd.in.size.poke(5.U)
             dut.clock.step()
-            //            dut.io.axi.aw.bits.addr.expect(1.U)
+
             dut.io.cmd.in.req.poke(false.B)
             dut.clock.step()
             var cnt: BigInt = 0
