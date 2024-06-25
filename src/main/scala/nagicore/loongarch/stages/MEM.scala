@@ -5,7 +5,7 @@ import chisel3.util._
 import nagicore.bus.AXI4IO
 import nagicore.loongarch.Config
 import nagicore.loongarch.CtrlFlags
-import nagicore.unit.{CachePiped, DPIC_SRAM}
+import nagicore.unit.{CachePiped}
 import nagicore.utils.Flags
 
 class mem2wbBits extends Bundle with Config{
@@ -87,8 +87,10 @@ class MEM extends Module with Config{
     dcache.io.master.front.bits.pipedata.rc := preg.rc
     dcache.io.master.front.bits.pipedata.ld_type := preg.ld_type
     dcache.io.master.front.bits.pipedata.pc := preg.pc
-    dcache.io.master.front.bits.pipedata.valid := DontCare
+    dcache.io.master.front.bits.pipedata.valid := preg.valid
     dcache.io.master.front.bits.pipedata.rdata := DontCare
+
+    dcache.io.master.back.stall := io.mem2wb.stall
 
     assert((preg.st_type===Flags.bp(CtrlFlags.stType.h) && addr(0) === 0.U) || preg.st_type=/=Flags.bp(CtrlFlags.stType.h))
     assert((preg.st_type===Flags.bp(CtrlFlags.stType.w) && addr(1, 0) === 0.U) || preg.st_type=/=Flags.bp(CtrlFlags.stType.w))
@@ -97,7 +99,7 @@ class MEM extends Module with Config{
 
     io.mem2wb.bits <> dcache.io.master.back.bits.pipedata_s2
     io.mem2wb.bits.rdata := dcache.io.master.back.bits.rdata
-    io.mem2wb.bits.valid := dcache.io.master.back.bits.valid
+    io.mem2wb.bits.valid := dcache.io.master.back.bits.valid || dcache.io.master.back.bits.pipedata_s2.valid
 
 
 

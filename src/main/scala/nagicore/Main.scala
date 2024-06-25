@@ -16,7 +16,8 @@ object Main extends App {
         )
         val firtoolOptions = Seq(
             // FirtoolOption("--lowering-options=disallowLocalVariables,locationInfoStyle=wrapInAtSquareBracket,noAlwaysComb"),
-            FirtoolOption("--lowering-options=disallowLocalVariables,disallowPackedArrays,locationInfoStyle=wrapInAtSquareBracket,noAlwaysComb"),
+            FirtoolOption("--lowering-options=disallowLocalVariables,locationInfoStyle=wrapInAtSquareBracket,noAlwaysComb"),
+//            FirtoolOption("--lowering-options=disallowLocalVariables,disallowPackedArrays,locationInfoStyle=wrapInAtSquareBracket,noAlwaysComb"),
 
             FirtoolOption("--split-verilog"),
             FirtoolOption("-o=" + build_dir),

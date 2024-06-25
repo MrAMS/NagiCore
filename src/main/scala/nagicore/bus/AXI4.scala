@@ -194,7 +194,7 @@ class AXI4ReadAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int) extends Modu
             io.axi.r.ready := true.B
             when(io.axi.r.fire){
                 axi_r_count := axi_r_count + 1.U
-                when(axi_r_count === cmd_buf.len){
+                when(io.axi.r.bits.last){
                     assert(io.axi.r.bits.last)
                     assert(io.axi.r.bits.resp === 0.U)
                     state := State.idle
@@ -208,30 +208,45 @@ class AXI4ReadAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int) extends Modu
 
 /**
  * AXI4 同步RAM从设备，第一个周期输入地址，第二个周期获得数据
+ * 注意：突发模式下，假设了主设备能够连续握手
  * @param addrBits 地址宽度
  * @param dataBits 数据宽度
  */
 class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
     val io = IO(Flipped(new AXI4IO(addrBits, dataBits)))
-    val sram = Module(new SyncRam(dataBits, 1 << addrBits, SyncRamType.DPIC))
+    val sram = Module(new SyncRam(addrBits, dataBits, SyncRamType.DPIC))
     sram.io.we := io.w.fire
     sram.io.din := io.w.bits.data
 
     val raddr = Reg(UInt(addrBits.W))
     val rid   = Reg(UInt(4.W))
     val rlen  = Reg(UInt(8.W))
+
+    val rs_idle :: rs_r :: Nil = Enum(2)
+    val rs = RegInit(rs_idle)
+
     when(io.ar.fire){
         raddr := io.ar.bits.addr
         rid := io.ar.bits.id
         rlen := io.ar.bits.len
+        rs := rs_r;
     }
+
+    when(!io.r.valid && rs =/= rs_idle){
+        raddr := raddr + (dataBits/8).U
+    }
+
     when(io.r.fire){
-        raddr := raddr + 1.U
+        raddr := raddr + (dataBits/8).U
         rlen := rlen - 1.U
+        when(rlen === 1.U){
+            rs := rs_idle
+        }
     }
-    io.ar.ready := rlen === 0.U
-    io.r.ready := rlen =/= 0.U
-    io.r.bits.last := rlen === 1.U
+    io.ar.ready := rs === rs_idle
+    io.r.valid := RegNext(rs === rs_r) // FIXME
+    io.r.bits.id := 0.U
+    io.r.bits.last := rlen === 0.U
     io.r.bits.resp := 0.U
     io.r.bits.data := sram.io.dout
 
@@ -259,12 +274,10 @@ class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
     }
     io.aw.ready := wlen === 0.U
     io.w.ready := wlen =/= 0.U
-    io.w.bits.last := wlen === 1.U
     io.b.bits.id := wid
     io.b.valid := ws === ws_b
     io.b.bits.resp := 0.U
 
     sram.io.addr := Mux(io.w.fire, waddr, raddr)
-    sram.io.en := wlen =/= 0.U || rlen =/= 0.U
-
+    sram.io.en := rs =/= rs_idle || wlen =/= 0.U
 }

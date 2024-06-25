@@ -69,9 +69,10 @@ class ID extends Module with Config{
                                     Mux(io.wb2id.bypass_rc === ra, io.wb2id.bypass_val,
                                         gpr.io.rdata(0)
                                     )
+                                )
                             )
                         )
-                    )
+    )
 
     io.id2ex.bits.aluA_sel := decoder.io.aluA_sel
 
@@ -80,13 +81,15 @@ class ID extends Module with Config{
     // bypass
     io.id2ex.bits.rb_val := Mux(rb === 0.U, 0.U,
                         Mux(io.ex2id.bypass_rc === rb, io.ex2id.bypass_val,
-                            Mux(io.mem2id.bypass_rc === rb, io.mem2id.bypass_val, 
-                                Mux(io.wb2id.bypass_rc === rb, io.wb2id.bypass_val,
-                                        gpr.io.rdata(1)
-                                    )
+                            Mux(io.mem2id.bypass1_rc === rb, io.mem2id.bypass1_val,
+                                Mux(io.mem2id.bypass2_rc === rb, io.mem2id.bypass2_val,
+                                    Mux(io.wb2id.bypass_rc === rb, io.wb2id.bypass_val,
+                                            gpr.io.rdata(1)
+                                        )
                             )
                         )
                     )
+    )
 
     io.id2ex.bits.aluB_sel := decoder.io.aluB_sel
 

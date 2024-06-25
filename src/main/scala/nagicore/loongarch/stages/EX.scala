@@ -57,14 +57,13 @@ class EX extends Module with Config{
     val preg = RegEnable(io.id2ex.bits, accp_pre)
 
     // kill following instrs, max 3 instrs
-    val kill_nxt = RegEnable(0.U(2.W), accp_pre)
+    val kill_nxt = RegInit(0.U(3.W))
     // stall pre stages in force
-    val stall_pre_counter = RegEnable(0.U(2.W), accp_pre)
+    val stall_pre_counter = RegEnable(0.U(2.W), accp_pre && io.id2ex.bits.valid)
 
     val valid_instr = kill_nxt === 0.U && preg.valid && !busy
     val is_ld : Bool = valid_instr && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
 
-    io.ex2mem.bits.valid := valid_instr
     // must stall when ld comes immediately unlike kill
     io.id2ex.stall := stall_pre_counter =/= 0.U || is_ld || busy || stall_nxt
     
@@ -76,24 +75,25 @@ class EX extends Module with Config{
     val br_pred_fail : Bool = bru.io.br_take && valid_instr
     io.ex2if.br_take := br_pred_fail
 
+    io.ex2mem.bits.valid := valid_instr
 
-                // when branch take or ld instr, we must kill next 2 instrs from IF, ID stages
-
-    kill_nxt := Mux(kill_nxt===0.U, 0.U,
+    val enable_cnter = accp_pre && io.id2ex.bits.valid
                     /* 当分支预测失败时，应该无视接下来4个周期的指令(IF,IMEM1,IMEM2,ID) */
-                    Mux(br_pred_fail, 4.U,
+    kill_nxt := Mux(enable_cnter,
+                    Mux(br_pred_fail, 3.U,
                         /* 当遇到加载指令时，应该请求上一级阻塞2个周期，并且无视接下来2个周期的指令(DMEM1, DMEM2) */
                         Mux(is_ld, 2.U,
-                            kill_nxt-1.U
+                            Mux(kill_nxt===0.U, 0.U,
+                                kill_nxt-1.U
+                            )
                         )
-                    )
-                )
+                    ), kill_nxt)
                 // we must stall 2 cycs until ld instr get value from mem and reach wb stage
-    stall_pre_counter := Mux(stall_pre_counter===0.U, 0.U,
+    stall_pre_counter := Mux(enable_cnter, Mux(stall_pre_counter===0.U, 0.U,
                             Mux(is_ld, 1.U,
                                 stall_pre_counter-1.U
                             )
-                        )
+                        ), stall_pre_counter)
 
     io.ex2if.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.bp(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
 

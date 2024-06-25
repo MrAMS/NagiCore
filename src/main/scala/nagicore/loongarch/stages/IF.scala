@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
 import nagicore.loongarch.Config
-import nagicore.unit.{CachePiped, DPIC_SRAM}
+import nagicore.unit.{CachePiped}
 import nagicore.loongarch.CtrlFlags
 
 class if2idBits extends Bundle with Config{
@@ -31,7 +31,7 @@ class IF extends Module with Config{
     icache.io.axi <> io.isram
 
     val pred_nxt_pc = Wire(UInt(XLEN.W))
-    val pc = RegEnable(pred_nxt_pc, PC_START, !icache.io.master.front.stall)
+    val pc = RegEnable(pred_nxt_pc, PC_START, (!icache.io.master.front.stall) || io.ex2if.br_take)
     val pc4 = pc+4.U
     pred_nxt_pc := Mux(io.ex2if.br_take, io.ex2if.br_pc,
                     pc4
@@ -47,7 +47,7 @@ class IF extends Module with Config{
     icache.io.master.front.bits.wdata := DontCare
     icache.io.master.front.bits.size := 2.U
     icache.io.master.front.bits.wmask := 0.U
-    icache.io.master.front.bits.valid := true.B
+    icache.io.master.front.bits.valid := !reset.asBool
     icache.io.master.front.bits.pipedata.pc := pc
     icache.io.master.front.bits.pipedata.pred_nxt_pc := pred_nxt_pc
     icache.io.master.front.bits.pipedata.instr := DontCare

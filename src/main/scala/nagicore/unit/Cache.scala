@@ -20,10 +20,10 @@ object CacheMemType extends Enumeration {
   * @param imp
   */
 class CacheMem(width: Int, depth: Int, imp: CacheMemType.CacheMemType=CacheMemType.Reg) extends Module{
-    val io = IO(new SyncRamIO(width, depth))
+    val io = IO(new SyncRamIO(log2Up(depth), width))
     imp match {
         case _ => {
-            val sram = Module(new SyncRam(width, depth))
+            val sram = Module(new SyncRam(log2Up(depth), width))
             sram.io <> io
         }
     }
@@ -153,6 +153,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     // stage2 pipeline registers
     val preg2 = RegEnable(preg1, pipego)
     object Stage2State extends ChiselEnum {
+        //  0       1          2        3           4            5            6
         val lookup, writeback, replace, replaceEnd, uncacheWait, uncacheRead, uncacheEnd = Value
     }
     // stage2 state

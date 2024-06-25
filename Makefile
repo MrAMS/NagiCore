@@ -10,10 +10,17 @@ $(TARGET): $(SRC)
 
 generate: $(TARGET)
 
+test: generate
+	xmake b diff
+	xmake r diff
+
+config:
+	xmake f --menu
+
 clean: 
 	-rm -rf $(BUILD_DIR)
 
 intellij-init:
 	mill mill.idea.GenIdea/idea
 
-.PHONY: intellij-init
+.PHONY: intellij-init clean config
