@@ -231,16 +231,17 @@ class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
         rlen := io.ar.bits.len
         rs := rs_r;
     }
-
-    when(!io.r.valid && rs =/= rs_idle){
+    val access_in_advence = !io.r.valid && rs =/= rs_idle
+    when(access_in_advence){
         raddr := raddr + (dataBits/8).U
     }
 
     when(io.r.fire){
         raddr := raddr + (dataBits/8).U
-        rlen := rlen - 1.U
-        when(rlen === 1.U){
+        when(rlen === 0.U){
             rs := rs_idle
+        }otherwise{
+            rlen := rlen - 1.U
         }
     }
     io.ar.ready := rs === rs_idle
@@ -259,25 +260,26 @@ class AXI4Slave(addrBits: Int, dataBits: Int) extends Module{
         waddr := io.aw.bits.addr
         wid := io.aw.bits.id
         wlen := io.aw.bits.len
+        ws := ws_w
     }
     when(io.w.fire){
         waddr := waddr + 1.U
-        wlen := wlen - 1.U
         when(io.w.bits.last){
             ws := ws_b
         }.otherwise{
-            ws := ws_w
+            // ws := ws_w
+            wlen := wlen - 1.U
         }
     }
     when(io.b.fire){
         ws := ws_idle
     }
-    io.aw.ready := wlen === 0.U
-    io.w.ready := wlen =/= 0.U
+    io.aw.ready := ws === ws_idle
+    io.w.ready := ws === ws_w
     io.b.bits.id := wid
     io.b.valid := ws === ws_b
     io.b.bits.resp := 0.U
 
     sram.io.addr := Mux(io.w.fire, waddr, raddr)
-    sram.io.en := rs =/= rs_idle || wlen =/= 0.U
+    sram.io.en := (access_in_advence || rlen =/= 0.U) || wlen =/= 0.U
 }

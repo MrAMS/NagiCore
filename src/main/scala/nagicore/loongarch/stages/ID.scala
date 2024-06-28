@@ -63,17 +63,16 @@ class ID extends Module with Config{
     gpr.io.raddr(0) := ra
     // bypass
     io.id2ex.bits.ra_val := Mux(ra === 0.U, 0.U,
-                        Mux(io.ex2id.bypass_rc === ra, io.ex2id.bypass_val,
-                            Mux(io.mem2id.bypass1_rc === ra, io.mem2id.bypass1_val,
-                                Mux(io.mem2id.bypass2_rc === ra, io.mem2id.bypass2_val,
-                                    Mux(io.wb2id.bypass_rc === ra, io.wb2id.bypass_val,
-                                        gpr.io.rdata(0)
+                                Mux(io.ex2id.bypass_rc === ra, io.ex2id.bypass_val,
+                                    Mux(io.mem2id.bypass1_rc === ra, io.mem2id.bypass1_val,
+                                        Mux(io.mem2id.bypass2_rc === ra, io.mem2id.bypass2_val,
+                                            Mux(io.wb2id.bypass_rc === ra, io.wb2id.bypass_val,
+                                                gpr.io.rdata(0)
+                                            )
+                                        )
                                     )
                                 )
                             )
-                        )
-    )
-
     io.id2ex.bits.aluA_sel := decoder.io.aluA_sel
 
     val rb = decoder.io.rb

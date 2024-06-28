@@ -25,7 +25,7 @@ object MULU_OP{
   *                   xsArrayMul:  使用香山的三周期ArrayMulDataModule实现
   * @note 注意valid信号只拉高一周期即可，busy在下一个周期开始拉高，直到乘法运算结束时拉低
   */
-class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.xsArrayMul) extends Module{
+class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer) extends Module{
     val io = IO(new Bundle{
         val a   = Input(UInt(dataBits.W))
         val b   = Input(UInt(dataBits.W))

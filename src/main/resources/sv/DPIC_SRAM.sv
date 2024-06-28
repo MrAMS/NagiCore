@@ -10,7 +10,7 @@ module DPIC_SRAM #(
     input   wire rst,
     input   wire en,
     input   wire [ADDR_WIDTH-1:0] addr,
-    input   wire [$clog2(DATA_WIDTH)-1:0] wmask,
+    input   wire [DATA_WIDTH/8-1:0] wmask,
     input   wire [1:0] size,
     input   wire [DATA_WIDTH-1:0] wdata,
     output  reg [DATA_WIDTH-1:0] rdata
@@ -25,7 +25,7 @@ always @(posedge clk) begin
     end else begin
         if (en) begin
             if(|wmask) begin
-                dpic_bus_write({{32-ADDR_WIDTH{1'b0}}, addr}, {{8-$clog2(DATA_WIDTH){1'b0}}, wmask}, wdata);
+                dpic_bus_write({{32-ADDR_WIDTH{1'b0}}, addr}, {{8-DATA_WIDTH/8{1'b0}}, wmask}, wdata);
             end else begin
                 dpic_bus_read({{32-ADDR_WIDTH{1'b0}}, addr}, {6'b0, size}, rdata_wire);
                 rdata <= rdata_wire;

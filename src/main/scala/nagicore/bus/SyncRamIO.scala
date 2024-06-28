@@ -17,6 +17,16 @@ class SyncRamIO(addrBits: Int, dataBits: Int) extends Bundle{
     val we      = Input(Bool())
 }
 
+/**
+  * 两个周期的同步RAM
+  * 当EN拉低时，不会写入任何数据，读数据将会保持在上一个状态；读后写时，将会继续读上一次读地址的数据
+  * When inactive, no data is written to the RAM and the output bus remains in its previous state.
+  * [NO_CHANGE Mode](https://docs.amd.com/r/en-US/am007-versal-memory/NO_CHANGE-Mode-DEFAULT)
+  * @note 
+  * @param addrBits
+  * @param dataBits
+  * @param imp
+  */
 class SyncRam(addrBits:Int, dataBits: Int, imp: SyncRamType.SyncRamType=SyncRamType.Reg) extends Module{
     val io = IO(new SyncRamIO(addrBits, dataBits))
     imp match {
@@ -27,7 +37,7 @@ class SyncRam(addrBits:Int, dataBits: Int, imp: SyncRamType.SyncRamType=SyncRamT
                     val rst     = Input(Bool())
                     val en      = Input(Bool())
                     val addr    = Input(UInt(addrBits.W))
-                    val wmask   = Input(UInt(log2Up(dataBits).W))
+                    val wmask   = Input(UInt((dataBits/8).W))
                     val size    = Input(UInt(2.W))
                     val wdata   = Input(UInt(dataBits.W))
                     val rdata   = Output(UInt(dataBits.W))
@@ -46,13 +56,32 @@ class SyncRam(addrBits:Int, dataBits: Int, imp: SyncRamType.SyncRamType=SyncRamT
             io.dout := sram.io.rdata
         }
         case _ => {
+            val mem = Mem(1<<addrBits, UInt(dataBits.W))
+            // val enable_read = io.en && !io.we
+            // val rdata = mem.read(io.addr, enable_read)
+            // io.dout := Mux(enable_read, rdata, RegEnable(rdata, enable_read))
+            // val rdata = mem.read(io.addr, enable_read)
+            // io.dout = 
+            // io.dout := rdata
+            // when(io.en&&io.we){
+            //     mem.write(io.addr, io.din)
+            // }
+            val rdata = mem.read(RegEnable(io.addr, io.en && !io.we))
+            io.dout := rdata
+            when(io.en&&io.we){
+                mem.write(io.addr, io.din)
+            }
+            /*
             val regs = Reg(Vec(1<<addrBits, UInt(dataBits.W)))
             // io.dout := regs(io.addr)
-            // 写优先
-            io.dout := Mux(RegNext(io.we), RegNext(io.din), RegNext(regs(io.addr)))
+            /* NO_CHANGE Mode ref: https://docs.amd.com/r/en-US/am007-versal-memory/NO_CHANGE-Mode-DEFAULT */
+            val rdata = regs(RegEnable(io.addr, io.en && !io.we))
+            io.dout := rdata
+            // io.dout := Mux(RegNext(io.we), RegNext(io.din), RegNext(regs(io.addr)))
             when(io.en&&io.we){
                 regs(io.addr) := io.din
             }
+            */
         }
     }
 }

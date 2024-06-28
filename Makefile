@@ -14,6 +14,9 @@ test: generate
 	xmake b diff
 	xmake r diff
 
+wave:
+	xmake r wave
+
 config:
 	xmake f --menu
 
@@ -23,4 +26,4 @@ clean:
 intellij-init:
 	mill mill.idea.GenIdea/idea
 
-.PHONY: intellij-init clean config
+.PHONY: intellij-init clean config wave

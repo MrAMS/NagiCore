@@ -27,16 +27,26 @@ class IF extends Module with Config{
         val isram = new AXI4IO(XLEN, XLEN)
     })
     // 2-stages cache
-    val icache = Module(new CachePiped(XLEN, XLEN, 2, 512, 4, () => new if2idBits()))
+    val icache = Module(new CachePiped(XLEN, XLEN, ICACHE_WAYS, ICACHE_SETS, ICACHE_LINE, () => new if2idBits()))
     icache.io.axi <> io.isram
 
     val pred_nxt_pc = Wire(UInt(XLEN.W))
-    val pc = RegEnable(pred_nxt_pc, PC_START, (!icache.io.master.front.stall) || io.ex2if.br_take)
+    val pc = RegEnable(pred_nxt_pc, PC_START, !icache.io.master.front.stall)
     val pc4 = pc+4.U
-    pred_nxt_pc := Mux(io.ex2if.br_take, io.ex2if.br_pc,
-                    pc4
-                )
-
+    // 当流水线阻塞但分支预测又失败的时候，需要先暂存，等阻塞解除后再修改PC，不能直接覆盖，否则会少一个周期的气泡
+    val br_take_when_stall = RegInit(false.B)
+    val br_pc_when_stall = RegInit(PC_START)
+    when(icache.io.master.front.stall && io.ex2if.br_take && !br_take_when_stall){
+        br_take_when_stall := true.B
+        br_pc_when_stall := io.ex2if.br_pc
+    }.elsewhen(!icache.io.master.front.stall){
+        br_take_when_stall := false.B
+    }
+    pred_nxt_pc := Mux(br_take_when_stall, br_pc_when_stall,
+                        Mux(io.ex2if.br_take, io.ex2if.br_pc,
+                            pc4
+                        )
+                    )
     /**
      *        -----Cache-----
      * pre -> IMEM1 -> IMEM2
