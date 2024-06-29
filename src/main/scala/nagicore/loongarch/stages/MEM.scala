@@ -48,7 +48,7 @@ class MEM extends Module with Config{
      * DMEM1 -> DMEM2
      */
 
-    val dcache = Module(new CachePiped(XLEN, XLEN, DCACHE_WAYS, DCACHE_SETS, DCACHE_LINE, () => new mem2wbBits()))
+    val dcache = Module(new CachePiped(XLEN, XLEN, DCACHE_WAYS, DCACHE_SETS, DCACHE_LINE, () => new mem2wbBits(), 1))
     dcache.io.axi <> io.dsram
     
     // pipeline registers
@@ -124,5 +124,13 @@ class MEM extends Module with Config{
         dpic_trace_mem_w.io.size := dcache.io.master.back.bits.size
         dpic_trace_mem_w.io.data := dcache.io.master.back.bits.wdata
         dpic_trace_mem_w.io.wmask :=dcache.io.master.back.bits.wmask
+
+        import nagicore.unit.DPIC_PERF_PIPE
+        val perf_pipe_dcache = Module(new DPIC_PERF_PIPE())
+        perf_pipe_dcache.io.clk := clock
+        perf_pipe_dcache.io.rst := reset
+        perf_pipe_dcache.io.id := 2.U
+        perf_pipe_dcache.io.invalid := !io.mem2wb.bits.valid
+        perf_pipe_dcache.io.stall := io.ex2mem.stall
     }
 }

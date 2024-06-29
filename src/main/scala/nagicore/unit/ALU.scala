@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 
 import nagicore.utils.Flags
+import nagicore.GlobalConfg
 
 object ALU_OP{
     // val X       = Value(0.U)
@@ -71,7 +72,9 @@ class ALU(dataBits: Int) extends Module {
     io.sum := sum
     import ALU_OP._
 
-    val mulu = Module(new MULU(dataBits))
+    val mulu_imp = if(GlobalConfg.SIM) MULU_IMP.synthesizer else MULU_IMP.xsArrayMul
+
+    val mulu = Module(new MULU(dataBits, mulu_imp))
     mulu.io.a := io.a
     mulu.io.b := io.b
     mulu.io.op := io.op(1, 0)

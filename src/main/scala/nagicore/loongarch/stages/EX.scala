@@ -8,6 +8,8 @@ import nagicore.loongarch.CtrlFlags
 import nagicore.unit.ALU
 import nagicore.unit.BRU_SINGLE
 import org.json4s.scalap.scalasig.Flags
+import nagicore.GlobalConfg
+import nagicore.unit.DPIC_PERF_BRU
 
 class ex2ifIO extends Bundle with Config{
     val br_pc       = Output(UInt(XLEN.W))
@@ -76,6 +78,14 @@ class EX extends Module with Config{
     val br_pred_fail : Bool = bru.io.br_take && valid_instr
     io.ex2if.br_take := br_pred_fail
 
+    if(GlobalConfg.SIM){
+        val dpic_perf_bru = Module(new DPIC_PERF_BRU)
+        dpic_perf_bru.io.clk := clock
+        dpic_perf_bru.io.rst := reset
+        dpic_perf_bru.io.valid := bru.io.br_take && valid_instr
+        dpic_perf_bru.io.fail := br_pred_fail
+    }
+
     io.ex2mem.bits.valid := valid_instr
                     
     kill_nxt := Mux(!stall_nxt && !busy && (kill_nxt === 0.U || io.id2ex.bits.valid),
@@ -129,4 +139,14 @@ class EX extends Module with Config{
 
     io.ex2id.bypass_rc := Mux(valid_instr, preg.rc, 0.U)
     io.ex2id.bypass_val := alu.io.out
+
+    if(GlobalConfg.SIM){
+        import nagicore.unit.DPIC_PERF_PIPE
+        val perf_pipe_ex = Module(new DPIC_PERF_PIPE())
+        perf_pipe_ex.io.clk := clock
+        perf_pipe_ex.io.rst := reset
+        perf_pipe_ex.io.id := 1.U
+        perf_pipe_ex.io.invalid := !io.ex2mem.bits.valid
+        perf_pipe_ex.io.stall := io.id2ex.stall
+    }
 }

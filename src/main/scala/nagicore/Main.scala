@@ -29,3 +29,7 @@ object Main extends App {
     }
     exportVerilog(() => new nagicore.loongarch.Core)
 }
+
+object GlobalConfg{
+    def SIM = true
+}

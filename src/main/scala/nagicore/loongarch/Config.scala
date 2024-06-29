@@ -8,7 +8,6 @@ trait Config{
     def GPR_NUM = 32
     def GPR_LEN = log2Up(GPR_NUM)
 
-    def SIM = true
     def PC_START = (0x1c000000).U(XLEN.W)
 
     def DPIC_TRACE = true

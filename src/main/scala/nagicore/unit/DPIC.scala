@@ -50,3 +50,40 @@ class DPIC_TRACE_MEM(addr_width: Int, data_width: Int) extends BlackBox(Map("ADD
     addResource("/sv/DPIC_TYPES_DEFINE.sv")
     addResource("/sv/DPIC_TRACE_MEM.sv")
 }
+
+class DPIC_PERF_CACHE extends BlackBox with HasBlackBoxResource{
+    val io = IO(new Bundle{
+        val clk     = Input(Clock())
+        val rst     = Input(Bool())
+        val valid   = Input(Bool())
+        val id      = Input(UInt(8.W))
+        val access_type = Input(UInt(8.W))
+    })
+    addResource("/sv/DPIC_TYPES_DEFINE.sv")
+    addResource("/sv/DPIC_PERF_CACHE.sv")
+}
+
+class DPIC_PERF_BRU extends BlackBox with HasBlackBoxResource{
+    val io = IO(new Bundle{
+        val clk     = Input(Clock())
+        val rst     = Input(Bool())
+        val valid   = Input(Bool())
+        val fail    = Input(UInt(8.W))
+    })
+    addResource("/sv/DPIC_TYPES_DEFINE.sv")
+    addResource("/sv/DPIC_PERF_BRU.sv")
+}
+
+class DPIC_PERF_PIPE extends BlackBox with HasBlackBoxResource{
+    val io = IO(new Bundle{
+        val clk     = Input(Clock())
+        val rst     = Input(Bool())
+        val id      = Input(UInt(8.W))
+        // 对下一流水级的有效指令计数
+        val invalid = Input(Bool())
+        // 对上一流水级的阻塞计数
+        val stall   = Input(Bool())
+    })
+    addResource("/sv/DPIC_TYPES_DEFINE.sv")
+    addResource("/sv/DPIC_PERF_PIPE.sv")
+}

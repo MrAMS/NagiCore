@@ -6,6 +6,7 @@ import chisel3.util._
 import nagicore.bus._
 import chisel3.util.random.LFSR
 import nagicore.utils.isPowerOf2
+import nagicore.GlobalConfg
 
 object CacheMemType extends Enumeration {
     type CacheMemType = Value
@@ -84,7 +85,7 @@ class CachePipedIO[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T
   * @param blockWords   块字个数
   * @param pipedataT    流水线其他信号
   */
-class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int, pipedataT: () => T) extends Module{
+class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int, pipedataT: () => T, id: Int=0) extends Module{
     require(isPowerOf2(ways))
     require(isPowerOf2(dataBits))
 
@@ -238,6 +239,15 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
         rtags(i) === addr_tag_s2 && rvalid(i)
     }
     hit := hits.reduceTree(_||_) && !preg2.uncache
+
+    if(GlobalConfg.SIM){
+        val dpic_perf_cache = Module(new DPIC_PERF_CACHE)
+        dpic_perf_cache.io.clk := clock
+        dpic_perf_cache.io.rst := reset
+        dpic_perf_cache.io.valid := pipego && preg2.valid
+        dpic_perf_cache.io.id := id.U
+        dpic_perf_cache.io.access_type := Cat(preg2.uncache, hit)
+    }
 
 
     // 请求读缺失行，并开始替换Cache行

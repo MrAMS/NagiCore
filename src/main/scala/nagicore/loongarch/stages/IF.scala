@@ -6,6 +6,7 @@ import nagicore.bus.AXI4IO
 import nagicore.loongarch.Config
 import nagicore.unit.{CachePiped}
 import nagicore.loongarch.CtrlFlags
+import nagicore.GlobalConfg
 
 class if2idBits extends Bundle with Config{
     val pc          = UInt(XLEN.W)
@@ -27,7 +28,7 @@ class IF extends Module with Config{
         val isram = new AXI4IO(XLEN, XLEN)
     })
     // 2-stages cache
-    val icache = Module(new CachePiped(XLEN, XLEN, ICACHE_WAYS, ICACHE_SETS, ICACHE_LINE, () => new if2idBits()))
+    val icache = Module(new CachePiped(XLEN, XLEN, ICACHE_WAYS, ICACHE_SETS, ICACHE_LINE, () => new if2idBits(), 0))
     icache.io.axi <> io.isram
 
     val pred_nxt_pc = Wire(UInt(XLEN.W))
@@ -63,8 +64,19 @@ class IF extends Module with Config{
     icache.io.master.front.bits.pipedata.instr := DontCare
     icache.io.master.front.bits.pipedata.valid := DontCare
 
+
     icache.io.master.back.stall := io.if2id.stall
     io.if2id.bits <> icache.io.master.back.bits.pipedata_s2
     io.if2id.bits.instr := icache.io.master.back.bits.rdata
     io.if2id.bits.valid := icache.io.master.back.bits.valid
+
+    if(GlobalConfg.SIM){
+        import nagicore.unit.DPIC_PERF_PIPE
+        val perf_pipe_icache = Module(new DPIC_PERF_PIPE())
+        perf_pipe_icache.io.clk := clock
+        perf_pipe_icache.io.rst := reset
+        perf_pipe_icache.io.id := 0.U
+        perf_pipe_icache.io.invalid := !io.if2id.bits.valid
+        perf_pipe_icache.io.stall := icache.io.master.front.stall
+    }
 }
