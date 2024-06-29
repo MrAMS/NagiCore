@@ -9,7 +9,6 @@ import nagicore.unit.ALU
 import nagicore.unit.BRU_SINGLE
 import org.json4s.scalap.scalasig.Flags
 import nagicore.GlobalConfg
-import nagicore.unit.DPIC_PERF_BRU
 
 class ex2ifIO extends Bundle with Config{
     val br_pc       = Output(UInt(XLEN.W))
@@ -79,10 +78,12 @@ class EX extends Module with Config{
     io.ex2if.br_take := br_pred_fail
 
     if(GlobalConfg.SIM){
+        import nagicore.unit.DPIC_PERF_BRU
+        import nagicore.unit.BR_TYPE
         val dpic_perf_bru = Module(new DPIC_PERF_BRU)
         dpic_perf_bru.io.clk := clock
         dpic_perf_bru.io.rst := reset
-        dpic_perf_bru.io.valid := bru.io.br_take && valid_instr
+        dpic_perf_bru.io.valid := preg.br_type =/= Flags.bp(BR_TYPE.NEVER) && valid_instr
         dpic_perf_bru.io.fail := br_pred_fail
     }
 
