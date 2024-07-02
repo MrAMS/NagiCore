@@ -36,37 +36,14 @@ class IF extends Module with Config{
     // pipeline registers
     val preg = RegEnable(io.preif2if.bits, !io.if2id.stall && !instrs_buff.io.out.busy)
 
-    // val hav_fetch = RegInit(false.B)
-    // when(!io.if2id.stall && !instrs_buff.io.out.busy){
-    //     hav_fetch := false.B
-    // }.elsewhen(!instrs_buff.io.out.busy){
-    //     hav_fetch := true.B
-    // }
-
     instrs_buff.io.in.fetch := preg.valid && !io.if2id.stall // TODO
     instrs_buff.io.in.new_trans := preg.jump && preg.valid && RegNext(!instrs_buff.io.out.busy)
     instrs_buff.io.in.trans_addr := preg.pc
-
-    // instrs_buff.io.front.bits.fetch := io.preif2if.bits.valid
-    // instrs_buff.io.front.bits.prefetch := io.preif2if.bits.valid
-    // instrs_buff.io.front.bits.new_trans := io.preif2if.bits.jump && io.preif2if.bits.valid
-    // instrs_buff.io.front.bits.trans_addr := io.preif2if.bits.pc
 
     io.if2id.bits.instr := instrs_buff.io.out.instr
     io.if2id.bits.valid := !instrs_buff.io.out.busy && preg.valid
     io.if2id.bits.pc := preg.pc
     io.if2id.bits.pred_nxt_pc := preg.pred_nxt_pc
-
-    // instrs_buff.io.front.bits.fetch := io.preif2if.bits.valid
-    // instrs_buff.io.front.bits.prefetch := io.preif2if.bits.valid
-    // instrs_buff.io.front.bits.new_trans := io.preif2if.bits.jump && io.preif2if.bits.valid
-    // instrs_buff.io.front.bits.trans_addr := io.preif2if.bits.pc
-
-    // instrs_buff.io.back.stall := io.if2id.stall
-    // io.if2id.bits.instr := instrs_buff.io.back.bits.instr
-    // io.if2id.bits.valid := instrs_buff.io.back.bits.valid
-    // io.if2id.bits.pc := io.preif2if.bits.pc
-    // io.if2id.bits.pred_nxt_pc := io.preif2if.bits.pred_nxt_pc
 
     io.preif2if.stall := instrs_buff.io.out.busy || io.if2id.stall
 

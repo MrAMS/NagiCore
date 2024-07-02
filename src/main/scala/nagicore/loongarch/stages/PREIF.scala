@@ -25,7 +25,6 @@ class PREIF extends Module with Config{
 
     val pred_nxt_pc = Wire(UInt(XLEN.W))
     val pc = RegEnable(pred_nxt_pc, PC_START, !io.preif2if.stall)
-    // val pc = RegEnable(pred_nxt_pc, PC_START-4.U, !io.preif2if.stall)
     val pc4 = pc+4.U
     // 当流水线阻塞但分支预测又失败的时候，需要先暂存，等阻塞解除后再修改PC，不能直接覆盖，否则会少一个周期的气泡
     val br_take_when_stall = RegInit(false.B)
@@ -49,11 +48,4 @@ class PREIF extends Module with Config{
     io.preif2if.bits.pred_nxt_pc := pred_nxt_pc
     io.preif2if.bits.jump := br_take
     io.preif2if.bits.valid := !reset.asBool
-
-    // io.preif2if.bits.pc := pc
-    // io.preif2if.bits.pred_nxt_pc := pred_nxt_pc
-    // io.preif2if.bits.jump := RegNext(
-    //     ((br_take_when_stall || io.ex2preif.br_take) && !io.preif2if.stall)
-    //     || RegNext(false.B, true.B))
-    // io.preif2if.bits.valid := RegNext(!reset.asBool)
 }
