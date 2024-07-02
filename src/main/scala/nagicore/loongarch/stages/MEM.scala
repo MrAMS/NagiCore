@@ -48,7 +48,7 @@ class MEM extends Module with Config{
      * DMEM1 -> DMEM2
      */
 
-    val dcache = Module(new CachePiped(XLEN, XLEN, DCACHE_WAYS, DCACHE_SETS, DCACHE_LINE, () => new mem2wbBits(), 1))
+    val dcache = Module(new CachePiped(XLEN, XLEN, DCACHE_WAYS, DCACHE_LINES, DCACHE_WORDS, () => new mem2wbBits(), 1))
     dcache.io.axi <> io.dsram
     
     // pipeline registers

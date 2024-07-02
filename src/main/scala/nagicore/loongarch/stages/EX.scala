@@ -10,7 +10,7 @@ import nagicore.unit.BRU_SINGLE
 import org.json4s.scalap.scalasig.Flags
 import nagicore.GlobalConfg
 
-class ex2ifIO extends Bundle with Config{
+class ex2preifIO extends Bundle with Config{
     val br_pc       = Output(UInt(XLEN.W))
     // effective signal
     val br_take     = Output(Bool())
@@ -41,7 +41,7 @@ class ex2memIO extends Bundle{
 
 class EX extends Module with Config{
     val io = IO(new Bundle{
-        val ex2if = new ex2ifIO
+        val ex2preif = new ex2preifIO
         val id2ex = Flipped(new id2exIO)
         val ex2mem = new ex2memIO
         val ex2id = new ex2idIO
@@ -75,7 +75,7 @@ class EX extends Module with Config{
     bru.io.br_type := preg.br_type
 
     val br_pred_fail : Bool = bru.io.br_take && valid_instr
-    io.ex2if.br_take := br_pred_fail
+    io.ex2preif.br_take := br_pred_fail
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_PERF_BRU
@@ -91,7 +91,7 @@ class EX extends Module with Config{
                     
     kill_nxt := Mux(!stall_nxt && !busy && (kill_nxt === 0.U || io.id2ex.bits.valid),
                     /* 当分支预测失败时，应该无视接下来4条有效指令(IF,IMEM1,IMEM2,ID) */
-                    Mux(br_pred_fail, 4.U,
+                    Mux(br_pred_fail, 3.U,
                         // Mux(is_ld, 3.U,
                             Mux(kill_nxt===0.U, 0.U,
                                 kill_nxt-1.U
@@ -107,7 +107,7 @@ class EX extends Module with Config{
                                 )
                             ), stall_pre_counter)
 
-    io.ex2if.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.bp(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
+    io.ex2preif.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.bp(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
 
     io.ex2mem.bits.instr := preg.instr
 
