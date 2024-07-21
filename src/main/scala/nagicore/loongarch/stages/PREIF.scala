@@ -43,7 +43,6 @@ class PREIF extends Module with Config{
                             pc4
                         )
                     )
-    // pc := pred_nxt_pc
     io.preif2if.bits.pc := pc
     io.preif2if.bits.pred_nxt_pc := pred_nxt_pc
     io.preif2if.bits.jump := br_take

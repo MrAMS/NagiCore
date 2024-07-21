@@ -5,6 +5,7 @@ import chisel3.util._
 import nagicore.loongarch.Config
 import nagicore.loongarch.CtrlFlags
 import nagicore.utils.Flags
+import nagicore.GlobalConfg
 
 class wb2idIO extends Bundle with Config{
     val wb_data     = Output(UInt(XLEN.W))
@@ -49,7 +50,7 @@ class WB extends Module with Config{
     io.wb2id.bypass_rc := io.wb2id.gpr_id
     io.wb2id.bypass_val := io.wb2id.wb_data
 
-    if(DPIC_TRACE){
+    if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_UPDATE_PC
         val dpic_update_pc = Module(new DPIC_UPDATE_PC(XLEN))
         dpic_update_pc.io.clk := clock

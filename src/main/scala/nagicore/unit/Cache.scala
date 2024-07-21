@@ -13,6 +13,11 @@ object CacheMemType extends Enumeration {
     val Reg, BlockRAM = Value
 }
 
+object CacheReplaceType extends Enumeration {
+    type CacheReplaceType = Value
+    val Random, LRU = Value
+}
+
 /**
   * CacheRAM 第二个周期返回读内容的同步RAM
   *
@@ -21,10 +26,10 @@ object CacheMemType extends Enumeration {
   * @param imp
   */
 class CacheMem(width: Int, depth: Int, imp: CacheMemType.CacheMemType=CacheMemType.Reg) extends Module{
-    val io = IO(new SyncRamIO(log2Up(depth), width))
+    val io = IO(new SyncRamIO(width, depth))
     imp match {
         case _ => {
-            val sram = Module(new SyncRam(log2Up(depth), width))
+            val sram = Module(new SyncRam(width, depth))
             sram.io <> io
         }
     }
@@ -87,7 +92,7 @@ class CachePipedIO[T <: Bundle](addrBits: Int, dataBits: Int, blockWords: Int, p
   * @param blockWords   块字个数
   * @param pipedataT    流水线其他信号
   */
-class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int, pipedataT: () => T, id: Int=0) extends Module{
+class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int, pipedataT: () => T, id: Int=0, replaceT: CacheReplaceType.CacheReplaceType=CacheReplaceType.Random) extends Module{
     require(isPowerOf2(ways))
     require(isPowerOf2(dataBits))
 
@@ -127,7 +132,9 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     axi_r_agent.io.cmd.in.size := 0.U
 
     val random_way = LFSR(16)(log2Up(ways)-1, 0)
-    val active_way = Reg(chiselTypeOf(random_way))
+    val lru = Reg(Vec(sets, UInt(log2Up(ways).W)))
+
+    val active_way = Reg(UInt(log2Up(ways).W))
 
     val data_bank = Seq.fill(ways)(Seq.fill(num_word)(Module(new CacheMem(dataBits, sets))))
     val data_bank_io = VecInit(data_bank.map(t => VecInit(t.map(_.io))))
@@ -145,18 +152,21 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
         io.en := pipego
         io.we := false.B
         io.din := 0.U
+        io.wmask := Fill(len_tag+1, true.B)
     })
     data_bank_io.map(_.map(io => {
         io.addr := addr_idx
         io.en := pipego
         io.we := false.B
         io.din := 0.U
+        io.wmask := Fill(dataBits, true.B)
     }))
     dirty_io.map(io => {
         io.addr := addr_idx
         io.en := pipego
         io.we := false.B
         io.din := 0.U
+        io.wmask := Fill(1, true.B)
     })
 
 
@@ -283,7 +293,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                 state_s2 := Stage2State.uncacheEnd
             }
         }.otherwise{
-            when(axi_r_agent.io.cmd.out.ready){
+            when(axi_w_agent.io.cmd.out.ready&&axi_r_agent.io.cmd.out.ready){
                 axi_r_agent.io.cmd.in.req := true.B
                 axi_r_agent.io.cmd.in.addr := preg2.addr
                 axi_r_agent.io.cmd.in.size := preg2.size
@@ -298,6 +308,9 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
             when(preg2.valid){
                 when(hit){
                     val hit_way = PriorityEncoder(hits)
+                    if(replaceT == CacheReplaceType.LRU){
+                        lru(addr_idx_s2) := ~hit_way
+                    }
                     // 当连续hit wr/ww同一Cache行时，需要前递
                     val hit_rw_bypass_need = bypass_addr === Cat(addr_tag_s2, addr_idx_s2)
                     val rdatas_real = VecInit.tabulate(blockWords){
@@ -328,8 +341,14 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
                         wait_uncache_ready()
                         // or just state_s2 := Stage2State.uncacheWait
                     }.otherwise{
-                        active_way := random_way
-                        when(rdirty(random_way) && rvalid(random_way)) {
+                        val active_way_wire = Wire(chiselTypeOf(active_way))
+                        if(replaceT == CacheReplaceType.LRU){
+                            active_way_wire := lru(addr_idx_s2)
+                        }else{
+                            active_way_wire := random_way
+                        }
+                        active_way := active_way_wire
+                        when(rdirty(active_way_wire) && rvalid(active_way_wire)) {
                             state_s2 := Stage2State.writeback
                         }.otherwise {
                             load_miss_lines()

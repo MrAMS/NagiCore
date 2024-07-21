@@ -27,9 +27,17 @@ object Main extends App {
         val executeArgs = Array("-td", build_dir)
         (new ChiselStage).execute(executeArgs, executeOptions)
     }
-    exportVerilog(() => new nagicore.loongarch.Core)
+    target match {
+        case "NSCSCC" => {
+            GlobalConfg.SIM = false
+            exportVerilog(() => new nagicore.loongarch.CoreNSCSCC)
+        }
+        case _ => {
+            exportVerilog(() => new nagicore.loongarch.Core)
+        }
+    }
 }
 
 object GlobalConfg{
-    def SIM = true
+    var SIM = true
 }

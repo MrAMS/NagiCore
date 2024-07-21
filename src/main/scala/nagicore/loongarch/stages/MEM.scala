@@ -7,6 +7,7 @@ import nagicore.loongarch.Config
 import nagicore.loongarch.CtrlFlags
 import nagicore.unit.{CachePiped}
 import nagicore.utils.Flags
+import nagicore.GlobalConfg
 
 class mem2wbBits extends Bundle with Config{
     val instr       = UInt(XLEN.W)
@@ -56,7 +57,9 @@ class MEM extends Module with Config{
 
     val addr = io.ex2mem.bits.alu_out
     dcache.io.master.front.bits.addr := addr
-    dcache.io.master.front.bits.uncache := (addr(31, 28) === "hb".U)
+    // FIXME
+    // dcache.io.master.front.bits.uncache := (addr(31, 28) === "hb".U)
+    dcache.io.master.front.bits.uncache := true.B
     dcache.io.master.front.bits.wdata := Flags.onehotMux(io.ex2mem.bits.st_type, Seq(
         CtrlFlags.stType.x  -> 0.U,
         CtrlFlags.stType.b  -> Fill(XLEN/8, io.ex2mem.bits.rb_val(7, 0)),
@@ -114,7 +117,7 @@ class MEM extends Module with Config{
     io.mem2id.bypass2_rc := Mux(dcache.io.master.back.bits.pipedata_s2.valid, dcache.io.master.back.bits.pipedata_s2.rc, 0.U)
     io.mem2id.bypass2_val := dcache.io.master.back.bits.pipedata_s2.alu_out
     
-    if(DPIC_TRACE){
+    if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_TRACE_MEM
         val dpic_trace_mem_w = Module(new DPIC_TRACE_MEM(XLEN, XLEN))
         dpic_trace_mem_w.io.clk := clock

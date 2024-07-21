@@ -55,12 +55,15 @@ class InstrsBuff(addrBits:Int, dataBits: Int, cacheBlockWords: Int, blockLen: In
     val io = IO(new InstrsBuffIO(addrBits, dataBits, cacheBlockWords))
     val buff = RegInit(VecInit(Seq.fill(blockLen*cacheBlockWords)(0.U(dataBits.W))))
     val buff_head = RegInit(0.U(log2Up(blockLen*cacheBlockWords).W))
+    dontTouch(buff_head)
     val buff_tail = RegInit(0.U(log2Up(blockLen*cacheBlockWords).W))
+    dontTouch(buff_tail)
     val buff_valid = RegInit(VecInit.fill(blockLen*cacheBlockWords)(false.B))
     val empty = !buff_valid(buff_head)
     val full = buff_valid(buff_tail + (cacheBlockWords-1).U)
 
-    val addr = RegInit(0.U(addrBits.W))
+    val cache_addr = RegInit(0.U(addrBits.W))
+    io.cache.front.bits.addr := cache_addr
 
     object State extends ChiselEnum {
         //  0       1           2               3
@@ -78,7 +81,7 @@ class InstrsBuff(addrBits:Int, dataBits: Int, cacheBlockWords: Int, blockLen: In
     io.cache.front.bits.valid := true.B
 
     when(!io.cache.front.stall && state =/= State.wait_cache){
-        addr := addr + (cacheBlockWords*dataBits/8).U
+        cache_addr := cache_addr + (cacheBlockWords*dataBits/8).U
     }
 
     val new_trans_offset = RegInit(0.U(log2Up(cacheBlockWords).W))
@@ -86,7 +89,9 @@ class InstrsBuff(addrBits:Int, dataBits: Int, cacheBlockWords: Int, blockLen: In
     val byte_len = log2Ceil(dataBits/8)
 
     def cache_new_trans()={
-        addr := io.in.trans_addr(addrBits-1, word_len+byte_len) ## 0.U((word_len+byte_len).W)
+        val addr = io.in.trans_addr(addrBits-1, word_len+byte_len) ## 0.U((word_len+byte_len).W)
+        cache_addr := addr
+        io.cache.front.bits.addr := addr
         io.cache.front.bits.pipedata.new_trans := true.B
         io.cache.front.bits.valid := true.B
         state := State.wait_new_trans
@@ -139,66 +144,9 @@ class InstrsBuff(addrBits:Int, dataBits: Int, cacheBlockWords: Int, blockLen: In
         }
     }
 
-    io.cache.front.bits.addr := addr
     io.cache.front.bits.size := log2Up(dataBits/8).U
     io.cache.front.bits.uncache := false.B
     io.cache.front.bits.wdata := DontCare
     io.cache.front.bits.wmask := 0.U
     io.cache.back.stall := full
-
-
-
-
-    // io.front.stall := state === State.wait_new_trans || state === State.wait_last_trans || state === State.idle
-
-    // io.back.bits.valid := !empty && !io.front.bits.new_trans
-
-
-    // io.cache.front.bits.pipedata.new_trans := false.B
-    // io.cache.front.bits.valid := true.B
-
-
-
-    // switch(state){
-    //     is(State.idle){
-    //         io.cache.front.bits.valid := false.B
-    //         buff_head := 0.U
-    //         buff_tail := 0.U
-    //         addr := (0x1c000000).U
-    //         state := State.wait_last_trans
-    //         io.cache.front.bits.pipedata.new_trans := true.B
-    //     }
-    //     is(State.wait_last_trans){
-    //         when(io.cache.back.bits.pipedata_s2.new_trans){
-    //             state := State.wait_new_trans
-    //         }
-    //     }
-    //     is(State.wait_new_trans){
-    //         when(io.cache.back.bits.valid && !full)
-    //         {
-    //             buff(buff_tail) := io.cache.back.bits.rdata
-    //             buff_tail := buff_tail + 1.U
-    //             state := State.continue_read
-    //         }
-    //     }
-    //     is(State.continue_read){
-    //         when(io.front.bits.new_trans){
-    //             buff_head := 0.U
-    //             buff_tail := 0.U
-    //             addr := io.front.bits.trans_addr
-    //             state := State.wait_new_trans
-    //             io.cache.front.bits.pipedata.new_trans := true.B
-    //         }.otherwise{
-    //             when(io.cache.back.bits.valid && !full){
-    //                 buff(buff_tail) := io.cache.back.bits.rdata
-    //                 buff_tail := buff_tail + 1.U
-    //             }
-    //             when(io.front.bits.fetch && !empty && !io.back.stall){
-    //                 buff_head := buff_head + 1.U
-    //             }
-    //         }
-    //     }
-    // }
-
-
 }

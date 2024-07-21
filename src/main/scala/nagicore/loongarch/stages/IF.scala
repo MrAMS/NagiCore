@@ -30,7 +30,7 @@ class IF extends Module with Config{
     // 2-stages cache
     val icache = Module(new CachePiped(XLEN, XLEN, ICACHE_WAYS, ICACHE_LINES, ICACHE_WORDS, () => new InstrsBuffCacheBundle, 0))
     icache.io.axi <> io.isram
-    val instrs_buff = Module(new InstrsBuff(XLEN, XLEN, ICACHE_WORDS, 4))
+    val instrs_buff = Module(new InstrsBuff(XLEN, XLEN, ICACHE_WORDS, INSTRS_BUFF_SIZE))
     instrs_buff.io.cache <> icache.io.master
 
     // pipeline registers
@@ -46,6 +46,8 @@ class IF extends Module with Config{
     io.if2id.bits.pred_nxt_pc := preg.pred_nxt_pc
 
     io.preif2if.stall := instrs_buff.io.out.busy || io.if2id.stall
+
+    // assert(instrs_buff.io.out.instr===0.U && (!instrs_buff.io.out.busy) && preg.valid)
 
 
     if(GlobalConfg.SIM){

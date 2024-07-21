@@ -10,6 +10,13 @@ $(TARGET): $(SRC)
 
 generate: $(TARGET)
 
+generate-nscscc: $(SRC)
+	-rm -rf $(BUILD_DIR)
+	mill nagicore.run NSCSCC
+	rm -rf ./nscscc/nagicore
+	mkdir -p ./nscscc/nagicore
+	cp build/*.sv nscscc/nagicore
+
 test: generate
 	xmake b diff
 	xmake r diff
