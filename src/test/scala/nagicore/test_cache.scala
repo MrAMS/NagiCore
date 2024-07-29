@@ -15,12 +15,12 @@ class TestCache extends AnyFlatSpec with ChiselScalatestTester{
             dut.io.axi.aw.ready.poke(true.B)
             dut.io.axi.w.ready.poke(true.B)
             dut.io.axi.b.valid.poke(false.B)
-            dut.io.axi.b.bits.resp.poke(0.U)
-            dut.io.axi.b.bits.resp.poke(0.U)
+            dut.io.axi.b.resp.poke(0.U)
+            dut.io.axi.b.resp.poke(0.U)
             dut.io.axi.ar.ready.poke(true.B)
             dut.io.axi.r.valid.poke(false.B)
             //! dangerous
-            dut.io.axi.r.bits.last.poke(false.B)
+            dut.io.axi.r.last.poke(false.B)
             /* write addr=0x1 val=0x1 */
             dut.io.master.front.bits.addr.poke(1.U)
             dut.io.master.front.bits.size.poke(2.U)
@@ -40,15 +40,15 @@ class TestCache extends AnyFlatSpec with ChiselScalatestTester{
             var cnt: Int = 0
             dut.io.axi.r.valid.poke(true.B)
             while(dut.io.master.front.stall.peekBoolean() && timeout >=0){
-                dut.io.axi.r.bits.data.poke((0x10+cnt).U)
+                dut.io.axi.r.data.poke((0x10+cnt).U)
                 if(dut.io.axi.r.ready.peekBoolean()){
                     cnt += 1
-                    if(cnt == 4) dut.io.axi.r.bits.last.poke(true.B)
+                    if(cnt == 4) dut.io.axi.r.last.poke(true.B)
                 }
                 dut.clock.step()
                 timeout -= 1
             }
-            dut.io.axi.r.bits.last.poke(false.B)
+            dut.io.axi.r.last.poke(false.B)
             dut.io.axi.r.valid.poke(false.B)
             dut.io.master.front.bits.valid.poke(true.B)
             dut.io.master.front.bits.wmask.poke(0.U)
@@ -117,15 +117,15 @@ class TestCache extends AnyFlatSpec with ChiselScalatestTester{
 
             dut.io.axi.r.valid.poke(true.B)
             while(dut.io.master.front.stall.peekBoolean() && timeout >=0){
-                dut.io.axi.r.bits.data.poke((0x20+cnt).U)
+                dut.io.axi.r.data.poke((0x20+cnt).U)
                 if(dut.io.axi.r.ready.peekBoolean()){
                     cnt += 1
-                    if(cnt == 4) dut.io.axi.r.bits.last.poke(true.B)
+                    if(cnt == 4) dut.io.axi.r.last.poke(true.B)
                 }
                 dut.clock.step()
                 timeout -= 1
             }
-            dut.io.axi.r.bits.last.poke(false.B)
+            dut.io.axi.r.last.poke(false.B)
             dut.io.axi.r.valid.poke(false.B)
 
 
@@ -145,14 +145,14 @@ class TestCache extends AnyFlatSpec with ChiselScalatestTester{
             dut.clock.step()
             dut.clock.step()
             dut.io.axi.r.valid.poke(true.B)
-            dut.io.axi.r.bits.data.poke(0x10101010.U)
-            dut.io.axi.r.bits.last.poke(true.B)
+            dut.io.axi.r.data.poke(0x10101010.U)
+            dut.io.axi.r.last.poke(true.B)
             dut.clock.step()
             dut.io.master.front.stall.expect(false.B)
             dut.io.master.back.bits.rdata.expect(0x10101010.U)
 
             dut.io.axi.r.valid.poke(false.B)
-            dut.io.axi.r.bits.last.poke(false.B)
+            dut.io.axi.r.last.poke(false.B)
 
             dut.clock.step()
 

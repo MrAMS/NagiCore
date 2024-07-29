@@ -1,0 +1,169 @@
+#-----------------------------------------------------------
+# Vivado v2019.2 (64-bit)
+# SW Build 2708876 on Wed Nov  6 21:39:14 MST 2019
+# IP Build 2700528 on Thu Nov  7 00:09:20 MST 2019
+# Start of session at: Sat Jul 27 11:52:14 2024
+# Process ID: 45204
+# Current directory: /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl
+# Command line: vivado
+# Log file: /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/vivado.log
+# Journal file: /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/vivado.jou
+#-----------------------------------------------------------
+start_gui
+open_project /home/santiego/proj/arch/nscscc/work/project_1/project_1.xpr
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4XBar.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_checker.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_crossbar_top.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_mst_if.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_mst_switch.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_pipeline.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_round_robin.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_round_robin_core.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_scfifo.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_scfifo_ram.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_slv_if.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_slv_switch.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_switch_top.sv'.
+CRITICAL WARNING: [Project 1-19] Could not find the file '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/extern_modules.sv'.
+Scanning sources...
+Finished scanning sources
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/tools/Xilinx/Vivado/2019.2/data/ip'.
+update_compile_order -fileset sources_1
+add_files {/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_30.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_28.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MaxPeriodFibonacciLFSR.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_28.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4ReadAgent.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_30.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/WB.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/Decoder.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_4.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/GPR.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C32.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_0.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_8.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C53.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_10.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4ReadAgent_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/uart_wrapper.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ID.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ALU.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C22.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/ram_wrapper.v /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CoreNSCSCC.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MEM.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/DIVU.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_12.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/IF.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_3.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_8.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4SRAM.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/PREIF.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/InstrsBuff.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ArrayMulDataModule.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CachePiped_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_2.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/thinpad_top.v /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4XBarNto1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4WriteAgent_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4XBar1toN.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_12.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CachePiped.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MULU.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_10.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/async.v /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/BRU_SINGLE.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4WriteAgent.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/EX.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/Arbiter2_AXI4AIO.sv}
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_30.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_28.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MaxPeriodFibonacciLFSR.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_1.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_28.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4ReadAgent.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_30.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/WB.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/Decoder.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_4.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/GPR.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C32.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_0.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_8.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C53.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_10.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4ReadAgent_1.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/uart_wrapper.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ID.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ALU.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C22.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/ram_wrapper.v' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CoreNSCSCC.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MEM.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/DIVU.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_12.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/IF.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_3.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_8.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4SRAM.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/PREIF.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/InstrsBuff.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ArrayMulDataModule.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CachePiped_1.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_2.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/thinpad_top.v' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4WriteAgent_1.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_12.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CachePiped.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MULU.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_10.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/async.v' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/BRU_SINGLE.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4WriteAgent.sv' cannot be added to the project because it already exists in the project, skipping this file
+WARNING: [filemgmt 56-12] File '/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/EX.sv' cannot be added to the project because it already exists in the project, skipping this file
+update_compile_order -fileset sources_1
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4XBar.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_checker.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_crossbar_top.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_mst_if.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_mst_switch.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_pipeline.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_round_robin.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_round_robin_core.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_scfifo.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_scfifo_ram.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_slv_if.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_slv_switch.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_switch_top.sv] -no_script -reset -force -quiet
+export_ip_user_files -of_objects  [get_files /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/extern_modules.sv] -no_script -reset -force -quiet
+remove_files  {/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4XBar.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_checker.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_crossbar_top.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_mst_if.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_mst_switch.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_pipeline.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_round_robin.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_round_robin_core.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_scfifo.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_scfifo_ram.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_slv_if.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_slv_switch.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/axicb_switch_top.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/extern_modules.sv}
+reset_run synth_1
+launch_runs impl_1 -to_step write_bitstream -jobs 16
+[Sat Jul 27 11:53:15 2024] Launched synth_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/synth_1/runme.log
+[Sat Jul 27 11:53:15 2024] Launched impl_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/impl_1/runme.log
+reset_run synth_1
+launch_runs impl_1 -to_step write_bitstream -jobs 16
+[Sat Jul 27 12:26:43 2024] Launched synth_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/synth_1/runme.log
+[Sat Jul 27 12:26:43 2024] Launched impl_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/impl_1/runme.log
+reset_run synth_1
+launch_runs impl_1 -to_step write_bitstream -jobs 16
+[Sat Jul 27 12:27:29 2024] Launched synth_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/synth_1/runme.log
+[Sat Jul 27 12:27:30 2024] Launched impl_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/impl_1/runme.log
+reset_run synth_1
+launch_runs impl_1 -to_step write_bitstream -jobs 16
+[Sat Jul 27 12:28:14 2024] Launched synth_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/synth_1/runme.log
+[Sat Jul 27 12:28:14 2024] Launched impl_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/project_1/project_1.runs/impl_1/runme.log
+open_run synth_1 -name synth_1
+Design is defaulting to impl run constrset: constrs_1
+Design is defaulting to synth run part: xc7a200tfbg676-2
+INFO: [Device 21-403] Loading part xc7a200tfbg676-2
+Netlist sorting complete. Time (s): cpu = 00:00:00.08 ; elapsed = 00:00:00.07 . Memory (MB): peak = 7075.039 ; gain = 0.000 ; free physical = 1890 ; free virtual = 4791
+INFO: [Netlist 29-17] Analyzing 836 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2019.2
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [/home/santiego/proj/arch/nscscc/work/project_1/project_1.srcs/constrs_1/imports/project_1.srcs/thinpad_top.xdc]
+WARNING: [Vivado 12-507] No nets matched 'clk_11M0592_IBUF'. [/home/santiego/proj/arch/nscscc/work/project_1/project_1.srcs/constrs_1/imports/project_1.srcs/thinpad_top.xdc:4]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/santiego/proj/arch/nscscc/work/project_1/project_1.srcs/constrs_1/imports/project_1.srcs/thinpad_top.xdc:4]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-507] No nets matched 'clock_btn_IBUF'. [/home/santiego/proj/arch/nscscc/work/project_1/project_1.srcs/constrs_1/imports/project_1.srcs/thinpad_top.xdc:18]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/santiego/proj/arch/nscscc/work/project_1/project_1.srcs/constrs_1/imports/project_1.srcs/thinpad_top.xdc:18]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+Finished Parsing XDC File [/home/santiego/proj/arch/nscscc/work/project_1/project_1.srcs/constrs_1/imports/project_1.srcs/thinpad_top.xdc]
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 7224.496 ; gain = 0.000 ; free physical = 1717 ; free virtual = 4622
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 74 instances were transformed.
+  IOBUF => IOBUF (IBUF, OBUFT): 64 instances
+  RAM128X1D => RAM128X1D (MUXF7(x2), RAMD64E(x4)): 10 instances
+
+open_run: Time (s): cpu = 00:00:13 ; elapsed = 00:00:13 . Memory (MB): peak = 7497.141 ; gain = 570.395 ; free physical = 1545 ; free virtual = 4463
+report_timing_summary -delay_type min_max -report_unconstrained -check_timing_verbose -max_paths 10 -input_pins -routable_nets -name timing_1
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -2, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+close_project
+open_project /home/santiego/proj/arch/nscscc/work/2024696/thinpad_top.xpr
+Scanning sources...
+Finished scanning sources
+INFO: [IP_Flow 19-234] Refreshing IP repositories
+INFO: [IP_Flow 19-1704] No user IP repositories specified
+INFO: [IP_Flow 19-2313] Loaded Vivado IP repository '/tools/Xilinx/Vivado/2019.2/data/ip'.
+update_compile_order -fileset sources_1
+import_files -force {/home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_30.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_28.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MaxPeriodFibonacciLFSR.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_28.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4ReadAgent.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_30.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/WB.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/Decoder.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_4.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/GPR.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C32.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_0.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_8.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C53.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_10.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4ReadAgent_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/uart_wrapper.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ID.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ALU.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/C22.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/ram_wrapper.v /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CoreNSCSCC.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MEM.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/DIVU.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_12.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/IF.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_3.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_8.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4SRAM.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/PREIF.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/InstrsBuff.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/ArrayMulDataModule.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CachePiped_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/mem_combMem_2.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/thinpad_top.v /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4XBarNto1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4WriteAgent_1.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4XBar1toN.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CacheMem_12.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/CachePiped.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/MULU.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/SyncRam_10.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/async.v /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/BRU_SINGLE.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/AXI4WriteAgent.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/EX.sv /home/santiego/proj/arch/nscscc/work/nagi/cores/nagiCore/rtl/nscscc/nagicore/Arbiter2_AXI4AIO.sv}
+update_compile_order -fileset sources_1
+reset_run synth_1
+launch_runs impl_1 -to_step write_bitstream -jobs 16
+[Sat Jul 27 12:34:43 2024] Launched synth_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/2024696/thinpad_top.runs/synth_1/runme.log
+[Sat Jul 27 12:34:43 2024] Launched impl_1...
+Run output will be captured here: /home/santiego/proj/arch/nscscc/work/2024696/thinpad_top.runs/impl_1/runme.log
+exit
+INFO: [Common 17-206] Exiting Vivado at Sat Jul 27 17:45:03 2024...

@@ -36,7 +36,7 @@ class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer) ext
     })
     imp_way match {
         case MULU_IMP.xsArrayMul => {
-            import nagicore.unit.Xiangshan.ArrayMulDataModule
+            import nagicore.unit.ip.Xiangshan.ArrayMulDataModule
             val arrayMul = Module(new ArrayMulDataModule(dataBits+1))
             arrayMul.io.a := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.a(dataBits-1)) ## io.a
             arrayMul.io.b := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.b(dataBits-1)) ## io.b

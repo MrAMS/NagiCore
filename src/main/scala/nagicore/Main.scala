@@ -32,6 +32,18 @@ object Main extends App {
             GlobalConfg.SIM = false
             exportVerilog(() => new nagicore.loongarch.CoreNSCSCC)
         }
+        // case "TEST" => {
+        //     exportVerilog(() => new Module{
+        //         val io = IO(new Bundle {
+        //             val clk = Input(Clock())
+        //         })
+        //         val a = "h123".U
+        //         val xbar = Module(new nagicore.unit.ip.axi_corssbar.AXI4XBar(32, 32, List((0, nagicore.unit.ip.axi_corssbar.Axi4RW.RW)), List(("0x80000000", "0x807FFFFF"))))
+        //         xbar.io.masters <> DontCare
+        //         xbar.io.slaves <> DontCare
+        //         xbar.io.slaves(0).ar.addr := 2.U(32.W)
+        //     })
+        // }
         case _ => {
             exportVerilog(() => new nagicore.loongarch.Core)
         }

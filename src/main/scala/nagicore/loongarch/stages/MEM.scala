@@ -40,7 +40,7 @@ class MEM extends Module with Config{
         val ex2mem = Flipped(new ex2memIO())
         val mem2wb = new mem2wbIO()
         val mem2id = new mem2idIO()
-        val dsram = new AXI4IO(XLEN, XLEN)
+        val dmem = new AXI4IO(XLEN, XLEN)
     })
 
     /**
@@ -50,7 +50,7 @@ class MEM extends Module with Config{
      */
 
     val dcache = Module(new CachePiped(XLEN, XLEN, DCACHE_WAYS, DCACHE_LINES, DCACHE_WORDS, () => new mem2wbBits(), 1))
-    dcache.io.axi <> io.dsram
+    dcache.io.axi <> io.dmem
     
     // pipeline registers
     // val preg = RegEnable(io.ex2mem.bits, !dcache.io.master.front.stall)

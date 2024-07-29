@@ -2,9 +2,12 @@ package nagicore.loongarch
 
 import chisel3._
 import chisel3.util._
-import nagicore.bus.{AXI4Slave, AXI4IO, SyncRam, SyncRamType, SyncRamIO}
+import nagicore.bus.{AXI4SRAM, AXI4IO, SyncRam, SyncRamType, SyncRamIO}
 import nagicore.loongarch.Config
 import nagicore.loongarch.stages._
+import nagicore.bus.AXI4Dummy
+import nagicore.bus.AXI4XBar1toN
+import nagicore.bus.AXI4XBarNto1
 
 class Core extends Module with Config{
     val io = IO(new Bundle{})
@@ -27,14 +30,34 @@ class Core extends Module with Config{
     wb_part.io.wb2id <> id_part.io.wb2id
     wb_part.io.stall_all := false.B
 
-    val isram_ctrl = Module(new AXI4Slave(XLEN, XLEN, 1.toLong<<XLEN, 8))
-    val dsram_ctrl = Module(new AXI4Slave(XLEN, XLEN, 1.toLong<<XLEN, 8))
-    if_part.io.isram <> isram_ctrl.io.axi
-    mem_part.io.dsram <> dsram_ctrl.io.axi
+    val isram_ctrl = Module(new AXI4SRAM(XLEN, XLEN, 1.toLong<<XLEN, 8))
+    val dsram_ctrl = Module(new AXI4SRAM(XLEN, XLEN, 1.toLong<<XLEN, 8))
+    val uart_axi4 = Module(new AXI4SRAM(XLEN, XLEN, 1.toLong<<XLEN, 8))
+
+    // val dummy = Module(new AXI4Dummy(XLEN, XLEN))
+    // mem_part.io.dsram <> dsram_ctrl.io.axi
+
+    val xbar_imem = Module(new AXI4XBarNto1(2, XLEN, XLEN, AXI4IDBITS))
+    xbar_imem.io.in(0) <> if_part.io.isram
+    xbar_imem.io.out <> isram_ctrl.io.axi
+
+    val xbar_dmem = Module(new AXI4XBar1toN(XLEN, XLEN, AXI4IDBITS, List(
+        (0x80000000L, 0x400000L, false),
+        (0x80400000L, 0x400000L, false),
+        (0xbfd00000L, 0x400000L, false),
+    )))
+
+    xbar_dmem.io.in <> mem_part.io.dmem
+    xbar_dmem.io.out(0) <> xbar_imem.io.in(1)
+    xbar_dmem.io.out(1) <> dsram_ctrl.io.axi
+    xbar_dmem.io.out(2) <> uart_axi4.io.axi
+
     val isram = Module(new SyncRam(XLEN, 1.toLong<<XLEN, SyncRamType.DPIC))
     val dsram = Module(new SyncRam(XLEN, 1.toLong<<XLEN, SyncRamType.DPIC))
+    val uart = Module(new SyncRam(XLEN, 1.toLong<<XLEN, SyncRamType.DPIC))
     isram_ctrl.io.sram <> isram.io
     dsram_ctrl.io.sram <> dsram.io
+    uart_axi4.io.sram <> uart.io
 }
 
 class CoreNSCSCC extends Module with Config{
@@ -42,6 +65,7 @@ class CoreNSCSCC extends Module with Config{
     val io = IO(new Bundle{
         val isram = Flipped(new SyncRamIO(32, RAM_DEPTH))
         val dsram = Flipped(new SyncRamIO(32, RAM_DEPTH))
+        val uart = new AXI4IO(XLEN, XLEN)
     })
 
     val preif_part = Module(new PREIF)
@@ -62,11 +86,32 @@ class CoreNSCSCC extends Module with Config{
     wb_part.io.wb2id <> id_part.io.wb2id
     wb_part.io.stall_all := false.B
 
-    val isram_ctrl = Module(new AXI4Slave(XLEN, XLEN, RAM_DEPTH, 32))
-    val dsram_ctrl = Module(new AXI4Slave(XLEN, XLEN, RAM_DEPTH, 32))
+    val isram_axi4_wrapper = Module(new AXI4SRAM(XLEN, XLEN, RAM_DEPTH, 32))
+    val dsram_axi4_wrapper = Module(new AXI4SRAM(XLEN, XLEN, RAM_DEPTH, 32))
 
-    if_part.io.isram <> isram_ctrl.io.axi
-    mem_part.io.dsram <> dsram_ctrl.io.axi
-    isram_ctrl.io.sram <> io.isram
-    dsram_ctrl.io.sram <> io.dsram
+    if_part.io.isram <> isram_axi4_wrapper.io.axi
+
+    val xbar_imem = Module(new AXI4XBarNto1(2, XLEN, XLEN, AXI4IDBITS))
+    xbar_imem.io.in(0) <> if_part.io.isram
+    xbar_imem.io.out <> isram_axi4_wrapper.io.axi
+
+    val xbar_dmem = Module(new AXI4XBar1toN(XLEN, XLEN, AXI4IDBITS, List(
+        (0x80000000L, 0x400000L, false),
+        (0x80400000L, 0x400000L, false),
+        (0xbfd00000L, 0x400000L, false),
+    )))
+
+    xbar_dmem.io.in <> mem_part.io.dmem
+    xbar_dmem.io.out(0) <> xbar_imem.io.in(1)
+    xbar_dmem.io.out(1) <> dsram_axi4_wrapper.io.axi
+    xbar_dmem.io.out(2) <> io.uart
+
+
+    // val xbar = Module(new AXI4XBar(XLEN, XLEN, List((3, nagicore.unit.ip.axi_corssbar.Axi4RW.RW)), List((0x80000000L, 0x807FFFFFL), (0xbfd00000L, 0xbfd0FFFFL))))
+    // xbar.io.slaves(0) <> dsram_axi4_wrapper.io.axi
+    // xbar.io.slaves(1) <> io.uart
+    // xbar.io.masters(0) <> mem_part.io.dsram
+
+    isram_axi4_wrapper.io.sram <> io.isram
+    dsram_axi4_wrapper.io.sram <> io.dsram
 }

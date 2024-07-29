@@ -60,7 +60,7 @@ module thinpad_top(
     output wire video_de           //行数据有效信号，用于区分消隐区
 );
 
-assign leds = dip_sw[15:0];
+//assign leds = dip_sw[15:0];
 
 wire [31:0] io_isram_dout;
 wire [19:0] io_isram_addr;
@@ -115,6 +115,38 @@ ram_wrapper dwrapper(
 
 );
 
+wire         io_uart_ar_ready;
+wire  [7:0]  io_uart_r_id;
+wire  [1:0]  io_uart_r_resp;
+wire  [31:0] io_uart_r_data;
+wire         io_uart_r_last;
+wire         io_uart_r_valid;
+wire         io_uart_aw_ready;
+wire         io_uart_w_ready;
+wire  [7:0]  io_uart_b_id;
+wire  [1:0]  io_uart_b_resp;
+wire         io_uart_b_valid;
+
+
+wire [7:0]  io_uart_ar_id;
+wire [31:0] io_uart_ar_addr;
+wire [7:0]  io_uart_ar_len;
+wire [2:0]  io_uart_ar_size;
+wire [1:0]  io_uart_ar_burst;
+wire        io_uart_ar_valid;
+wire        io_uart_r_ready;
+wire [7:0]  io_uart_aw_id;
+wire [31:0] io_uart_aw_addr;
+wire [7:0]  io_uart_aw_len;
+wire [2:0]  io_uart_aw_size;
+wire [1:0]  io_uart_aw_burst;
+wire        io_uart_aw_valid;
+wire [31:0] io_uart_w_data;
+wire [3:0]  io_uart_w_strb;
+wire        io_uart_w_last,
+            io_uart_w_valid,
+            io_uart_b_ready;
+
 CoreNSCSCC core(
     .clock(clk_50M),
     .reset(reset_btn),
@@ -129,15 +161,87 @@ CoreNSCSCC core(
     .io_dsram_din(io_dsram_din),
     .io_dsram_en(io_dsram_en),
     .io_dsram_we(io_dsram_we),
-    .io_dsram_wmask(io_dsram_wmask)
+    .io_dsram_wmask(io_dsram_wmask),
+
+    .io_uart_ar_ready(io_uart_ar_ready),
+    .io_uart_r_bits_id(io_uart_r_id),
+    .io_uart_r_bits_resp(io_uart_r_resp),
+    .io_uart_r_bits_data(io_uart_r_data),
+    .io_uart_r_bits_last(io_uart_r_last),
+    .io_uart_r_valid(io_uart_r_valid),
+    .io_uart_aw_ready(io_uart_aw_ready),
+    .io_uart_w_ready(io_uart_w_ready),
+    .io_uart_b_bits_id(io_uart_b_id),
+    .io_uart_b_bits_resp(io_uart_b_resp),
+    .io_uart_b_valid(io_uart_b_valid),
+
+    .io_uart_ar_bits_id(io_uart_ar_id),
+    .io_uart_ar_bits_addr(io_uart_ar_addr),
+    .io_uart_ar_bits_len(io_uart_ar_len),
+    .io_uart_ar_bits_size(io_uart_ar_size),
+    .io_uart_ar_bits_burst(io_uart_ar_burst),
+    .io_uart_ar_valid(io_uart_ar_valid),
+    .io_uart_r_ready(io_uart_r_ready),
+    .io_uart_aw_bits_id(io_uart_aw_id),
+    .io_uart_aw_bits_addr(io_uart_aw_addr),
+    .io_uart_aw_bits_len(io_uart_aw_len),
+    .io_uart_aw_bits_size(io_uart_aw_size),
+    .io_uart_aw_bits_burst(io_uart_aw_burst),
+    .io_uart_aw_valid(io_uart_aw_valid),
+    .io_uart_w_bits_data(io_uart_w_data),
+    .io_uart_w_bits_strb(io_uart_w_strb),
+    .io_uart_w_bits_last(io_uart_w_last),
+    .io_uart_w_valid(io_uart_w_valid),
+    .io_uart_b_ready(io_uart_b_ready)
 );
 
-ila_0 u_ila(
-    .probe0(io_isram_addr),
-    .probe1(io_isram_dout),
-    .probe2(io_dsram_addr),
-    .probe3(io_dsram_dout),
-    .clk(clk_50M)
+uart_wrapper uart(
+    .clk50M(clk_50M),
+    .rst(reset_btn),
+
+    .txd(txd),
+    .rxd(rxd),
+
+    .io_uart_ar_ready(io_uart_ar_ready),
+    .io_uart_r_id(io_uart_r_id),
+    .io_uart_r_resp(io_uart_r_resp),
+    .io_uart_r_data(io_uart_r_data),
+    .io_uart_r_last(io_uart_r_last),
+    .io_uart_r_valid(io_uart_r_valid),
+    .io_uart_aw_ready(io_uart_aw_ready),
+    .io_uart_w_ready(io_uart_w_ready),
+    .io_uart_b_id(io_uart_b_id),
+    .io_uart_b_resp(io_uart_b_resp),
+    .io_uart_b_valid(io_uart_b_valid),
+
+    .io_uart_ar_id(io_uart_ar_id),
+    .io_uart_ar_addr(io_uart_ar_addr),
+    .io_uart_ar_len(io_uart_ar_len),
+    .io_uart_ar_size(io_uart_ar_size),
+    .io_uart_ar_burst(io_uart_ar_burst),
+    .io_uart_ar_valid(io_uart_ar_valid),
+    .io_uart_r_ready(io_uart_r_ready),
+    .io_uart_aw_id(io_uart_aw_id),
+    .io_uart_aw_addr(io_uart_aw_addr),
+    .io_uart_aw_len(io_uart_aw_len),
+    .io_uart_aw_size(io_uart_aw_size),
+    .io_uart_aw_burst(io_uart_aw_burst),
+    .io_uart_aw_valid(io_uart_aw_valid),
+    .io_uart_w_data(io_uart_w_data),
+    .io_uart_w_strb(io_uart_w_strb),
+    .io_uart_w_last(io_uart_w_last),
+    .io_uart_w_valid(io_uart_w_valid),
+    .io_uart_b_ready(io_uart_b_ready)
 );
+
+reg [31:0] wdata;
+
+always @(posedge clk_50M) begin
+    if(io_uart_w_valid&&io_uart_w_ready) begin
+        wdata <= io_uart_w_data;
+    end
+end
+
+assign leds = wdata[15:0];
 
 endmodule

@@ -122,7 +122,8 @@ class EX extends Module with Config{
     ))
 
     // must assert for only one cycle
-    alu.io.valid := kill_nxt === 0.U && preg.valid && RegNext(accp_pre)
+    // alu.io.valid := kill_nxt === 0.U && preg.valid && RegNext(accp_pre)
+    alu.io.valid := kill_nxt === 0.U && stall_pre_counter === 0.U && preg.valid && RegNext(accp_pre)
     alu.io.a := alu_a
     alu.io.b := alu_b
     alu.io.op := preg.alu_op

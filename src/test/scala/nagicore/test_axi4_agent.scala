@@ -16,7 +16,7 @@ class TestAXI4Agent extends AnyFlatSpec with ChiselScalatestTester{
             dut.io.axi.aw.ready.poke(true.B)
             dut.io.axi.w.ready.poke(true.B)
             dut.io.axi.b.valid.poke(false.B)
-            dut.io.axi.b.bits.resp.poke(0.U)
+            dut.io.axi.b.resp.poke(0.U)
             dut.io.cmd.in.req.poke(false.B)
             dut.clock.step()
             dut.io.cmd.in.req.poke(true.B)
@@ -28,10 +28,10 @@ class TestAXI4Agent extends AnyFlatSpec with ChiselScalatestTester{
                 dut.io.cmd.in.wdata(i).poke(i.U)
             }
             dut.clock.step()
-//            dut.io.axi.aw.bits.addr.expect(1.U)
+//            dut.io.axi.aw.addr.expect(1.U)
             dut.io.cmd.in.req.poke(false.B)
             dut.clock.step()
-            while(!dut.io.axi.w.bits.last.peekBoolean()){
+            while(!dut.io.axi.w.last.peekBoolean()){
                 dut.io.axi.w.ready.poke(rand.nextBoolean().B)
                 dut.clock.step()
             }
@@ -47,7 +47,7 @@ class TestAXI4Agent extends AnyFlatSpec with ChiselScalatestTester{
             val rand = new scala.util.Random
             dut.io.axi.ar.ready.poke(true.B)
             dut.io.axi.r.valid.poke(false.B)
-            dut.io.axi.r.bits.resp.poke(0.U)
+            dut.io.axi.r.resp.poke(0.U)
             dut.io.cmd.in.req.poke(false.B)
             dut.clock.step()
             dut.io.cmd.in.req.poke(true.B)
@@ -62,8 +62,8 @@ class TestAXI4Agent extends AnyFlatSpec with ChiselScalatestTester{
             while(cnt < 4){
                 val skip = rand.nextBoolean()
                 dut.io.axi.r.valid.poke(skip.B)
-                dut.io.axi.r.bits.data.poke(cnt)
-                dut.io.axi.r.bits.last.poke((cnt==3).B)
+                dut.io.axi.r.data.poke(cnt)
+                dut.io.axi.r.last.poke((cnt==3).B)
                 dut.clock.step()
                 if(skip) cnt += 1
             }

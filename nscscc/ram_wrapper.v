@@ -19,7 +19,6 @@ module ram_wrapper(
 
 reg we;
 reg [19:0] addr;
-reg [31:0] rdata;
 reg [31:0] wdata;
 reg [3:0] wmask;
 
@@ -38,7 +37,6 @@ assign io_sram_dout = we ? 0 : ram_data;
 
 always @(posedge clk) begin
     if (rst) begin
-        rdata <= 0;
         we <= 0;
         addr <= 0;
     end else begin

@@ -19,4 +19,6 @@ trait Config{
     def DCACHE_WAYS = 2
     def DCACHE_LINES = 128*4
     def DCACHE_WORDS = 8
+
+    def AXI4IDBITS = 4
 }
