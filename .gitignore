@@ -15,3 +15,8 @@ compile_commands.json
 *.bkp
 /test_run_dir
 /nscscc/nagicore
+
+
+# Xilinx Vivado
+*.jou
+*.log
