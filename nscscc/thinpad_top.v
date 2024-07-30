@@ -69,9 +69,9 @@ wire        io_isram_en;
 wire        io_isram_we;
 wire [3:0]  io_isram_wmask;
 
-ram_wrapper iwrapper(
-    .clk            (clk_50M),
-    .rst            (reset_btn),
+ram_wrapper_through iwrapper(
+    // .clk            (clk_50M),
+    // .rst            (reset_btn),
     
     .ram_data       (base_ram_data),
     .ram_addr       (base_ram_addr),
@@ -95,9 +95,9 @@ wire        io_dsram_en;
 wire        io_dsram_we;
 wire [3:0]  io_dsram_wmask;
 
-ram_wrapper dwrapper(
-    .clk            (clk_50M),
-    .rst            (reset_btn),
+ram_wrapper_through dwrapper(
+    // .clk            (clk_50M),
+    // .rst            (reset_btn),
     
     .ram_data       (ext_ram_data),
     .ram_addr       (ext_ram_addr),
@@ -147,8 +147,17 @@ wire        io_uart_w_last,
             io_uart_w_valid,
             io_uart_b_ready;
 
+
+wire clk_150M;
+
+clk_wiz_0 clk_wiz_0_inst(
+    .reset(reset_btn),
+    .clk_50M(clk_50M),
+    .clk_150M(clk_150M)
+);
+
 CoreNSCSCC core(
-    .clock(clk_50M),
+    .clock(clk_150M),
     .reset(reset_btn),
     .io_isram_dout(io_isram_dout),
     .io_dsram_dout(io_dsram_dout),
@@ -195,8 +204,11 @@ CoreNSCSCC core(
     .io_uart_b_ready(io_uart_b_ready)
 );
 
-uart_wrapper uart(
-    .clk50M(clk_50M),
+uart_wrapper#(
+    .clk_freq(150000000),
+    .uart_baud(9600)
+) uart(
+    .clk(clk_150M),
     .rst(reset_btn),
 
     .txd(txd),
@@ -234,14 +246,6 @@ uart_wrapper uart(
     .io_uart_b_ready(io_uart_b_ready)
 );
 
-reg [31:0] wdata;
-
-always @(posedge clk_50M) begin
-    if(io_uart_w_valid&&io_uart_w_ready) begin
-        wdata <= io_uart_w_data;
-    end
-end
-
-assign leds = wdata[15:0];
+assign leds = dip_sw[15:0];
 
 endmodule

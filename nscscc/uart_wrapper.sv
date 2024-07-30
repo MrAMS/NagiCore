@@ -1,5 +1,8 @@
-module uart_wrapper(
-  input wire clk50M,
+module uart_wrapper # (
+  parameter clk_freq = 50000000,
+  parameter uart_baud = 9600
+)(
+  input wire clk,
   input wire rst,
   output         io_uart_ar_ready,
   output  [7:0]  io_uart_r_id,
@@ -62,7 +65,7 @@ assign io_uart_r_id = rid;
 assign io_uart_r_last = io_uart_r_valid;
 assign io_uart_r_resp = 0;
 
-always @(posedge clk50M) begin
+always @(posedge clk) begin
   if (rst) begin
     stater <= 0;
   end else begin
@@ -78,9 +81,9 @@ always @(posedge clk50M) begin
 end
 
 
-async_receiver #(.ClkFrequency(50000000),.Baud(9600)) //接收模块，9600无检验位
+async_receiver #(.ClkFrequency(clk_freq),.Baud(uart_baud)) //接收模块，9600无检验位
     ext_uart_r(
-        .clk(clk50M),                       //外部时钟信号
+        .clk(clk),                       //外部时钟信号
         .RxD(rxd),                           //外部串行信号输入
         .RxD_data_ready(ext_uart_ready),  //数据接收到标志
         .RxD_clear(ext_uart_clear),       //清除接收标志
@@ -107,7 +110,7 @@ assign io_uart_b_valid = wb;
 assign io_uart_b_resp = 0;
 
 
-always @(posedge clk50M) begin
+always @(posedge clk) begin
   if (rst) begin
     wb <= 0;
   end else begin
@@ -123,7 +126,7 @@ always @(posedge clk50M) begin
   end
 end
 
-always @(posedge clk50M) begin //将缓冲区ext_uart_buffer发送出去
+always @(posedge clk) begin //将缓冲区ext_uart_buffer发送出去
     if(rst) begin
         ext_uart_tx <= 0;
         ext_uart_start <= 0;
@@ -137,9 +140,9 @@ always @(posedge clk50M) begin //将缓冲区ext_uart_buffer发送出去
     end
 end
 
-async_transmitter #(.ClkFrequency(50000000),.Baud(9600)) //发送模块，9600无检验位
+async_transmitter #(.ClkFrequency(clk_freq),.Baud(uart_baud)) //发送模块，9600无检验位
     ext_uart_t(
-        .clk(clk50M),                  //外部时钟信号
+        .clk(clk),                  //外部时钟信号
         .TxD(txd),                      //串行信号输出
         .TxD_busy(ext_uart_busy),       //发送器忙状态指示
         .TxD_start(ext_uart_start),    //开始发送信号

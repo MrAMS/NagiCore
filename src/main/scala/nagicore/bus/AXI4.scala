@@ -311,6 +311,99 @@ class AXI4SRAM(addrBits: Int, dataBits: Int, depth: Long, width: Int, idBits: In
     io.sram.en := sram_read_req || io.axi.w.fire
 }
 
+class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long, width: Int, extCycs: Int=0) extends Module{
+    val io = IO(new Bundle{
+        val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))
+        val sram = Flipped(new SyncRamIO(dataBits, depth))
+    })
+
+    val raddr = Reg(UInt(addrBits.W))
+    val rid   = Reg(UInt(idBits.W))
+    val rlen  = Reg(UInt(8.W))
+
+    val rs_idle :: rs_r :: Nil = Enum(2)
+    val rs = RegInit(rs_idle)
+    val rrcycs = RegInit(extCycs.U)
+    when(rs === rs_r){
+        when(io.axi.r.fire){
+            rrcycs := extCycs.U
+        }.otherwise{
+            rrcycs := Mux(rrcycs === 0.U, 0.U, rrcycs - 1.U)
+        }
+    }
+
+    when(io.axi.ar.fire){
+        raddr := io.axi.ar.bits.addr
+        rid := io.axi.ar.bits.id
+        rlen := io.axi.ar.bits.len
+        rs := rs_r
+    }
+    // val access_in_advence = !io.axi.r.valid && rs =/= rs_idle
+    // when(access_in_advence){
+    //     raddr := raddr + (dataBits/8).U
+    // }
+
+    when(io.axi.r.fire){
+        raddr := raddr + (dataBits/8).U
+        when(rlen === 0.U){
+            rs := rs_idle
+        }otherwise{
+            rlen := rlen - 1.U
+        }
+    }
+    io.axi.ar.ready := rs === rs_idle
+    io.axi.r.valid := rs === rs_r && rrcycs === 0.U
+    io.axi.r.bits.id := rid
+    io.axi.r.bits.last := rlen === 0.U
+    io.axi.r.bits.resp := 0.U
+    io.axi.r.bits.data := io.sram.dout
+
+    val ws_idle :: ws_w :: ws_b :: Nil = Enum(3)
+    val ws = RegInit(ws_idle)
+    val waddr = Reg(UInt(addrBits.W))
+    val wid   = Reg(UInt(idBits.W))
+    val wlen  = Reg(UInt(8.W))
+    val wwcycs = RegInit(extCycs.U)
+    when(ws === ws_w){
+        when(io.axi.w.fire){
+            wwcycs := extCycs.U
+        }.otherwise{
+            wwcycs := Mux(wwcycs === 0.U, 0.U, wwcycs - 1.U)
+        }
+    }
+
+    when(io.axi.aw.fire){
+        waddr := io.axi.aw.bits.addr
+        wid := io.axi.aw.bits.id
+        wlen := io.axi.aw.bits.len
+        ws := ws_w
+    }
+    when(io.axi.w.fire){
+        waddr := waddr + (dataBits/8).U
+        when(io.axi.w.bits.last){
+            ws := ws_b
+        }.otherwise{
+            // ws := ws_w
+            wlen := wlen - 1.U
+        }
+    }
+    when(io.axi.b.fire){
+        ws := ws_idle
+    }
+    io.axi.aw.ready := ws === ws_idle
+    io.axi.w.ready := ws === ws_w && wwcycs === 0.U
+    io.axi.b.bits.id := wid
+    io.axi.b.valid := ws === ws_b
+    io.axi.b.bits.resp := 0.U
+
+    io.sram.we := ws===ws_w
+    io.sram.din := io.axi.w.bits.data
+    io.sram.wmask := Mux(ws===ws_w, io.axi.w.bits.strb, 0.U)
+    val sram_addr = Mux(ws === ws_w, waddr, raddr)(addrBits-1, log2Ceil(width/8))
+    io.sram.addr := sram_addr
+    io.sram.en := rs === rs_r || ws === ws_w
+}
+
 class AXI4Dummy(addrBits: Int, dataBits: Int, idBits: Int=8) extends Module{
     val io = IO(new Bundle{
         val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))

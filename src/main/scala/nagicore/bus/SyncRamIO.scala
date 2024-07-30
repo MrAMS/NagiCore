@@ -6,7 +6,7 @@ import nagicore.unit.CacheMemType.Value
 
 object SyncRamType extends Enumeration {
     type SyncRamType = Value
-    val Reg, DPIC, RAM = Value
+    val Reg, DPIC, DPIC_ONECYC, RAM = Value
 }
 
 class SyncRamIO(width: Int, depth: Long) extends Bundle{
@@ -57,30 +57,31 @@ class SyncRam(width: Int, depth: Long, imp: SyncRamType.SyncRamType=SyncRamType.
             sram.io.en := io.en
             io.dout := sram.io.rdata
         }
-        // case SyncRamType.RAM => {
-        //     class BaseRAM extends BlackBox(Map("ADDR_WIDTH" -> addrBits, "DATA_WIDTH" -> dataBits)) with HasBlackBoxResource{
-        //         val io = IO(new Bundle {
-        //             val clk     = Input(Clock())
-        //             val rst     = Input(Bool())
-        //             val en      = Input(Bool())
-        //             val addr    = Input(UInt(addrBits.W))
-        //             val wmask   = Input(UInt((dataBits/8).W))
-        //             val size    = Input(UInt(2.W))
-        //             val wdata   = Input(UInt(dataBits.W))
-        //             val rdata   = Output(UInt(dataBits.W))
-        //         })
-        //         /*
-        //         inout wire[31:0] base_ram_data,  //BaseRAM数据，低8位与CPLD串口控制器共享
-        //         output wire[19:0] base_ram_addr, //BaseRAM地址
-        //         output wire[3:0] base_ram_be_n,  //BaseRAM字节使能，低有效。如果不使用字节使能，请保持为0
-        //         output wire base_ram_ce_n,       //BaseRAM片选，低有效
-        //         output wire base_ram_oe_n,       //BaseRAM读使能，低有效
-        //         output wire base_ram_we_n,       //BaseRAM写使能，低有效
-        //         */
-        //         addResource("/sv/HW_BaseRAM.sv")
-        //         addResource("/sv/DPIC_SRAM.sv")
-        //     }
-        // }
+        case SyncRamType.DPIC_ONECYC => {
+            class DPIC_SRAM_ONECYC extends BlackBox(Map("ADDR_WIDTH" -> addrBits, "DATA_WIDTH" -> width)) with HasBlackBoxResource{
+                val io = IO(new Bundle {
+                    val clk     = Input(Clock())
+                    val rst     = Input(Bool())
+                    val en      = Input(Bool())
+                    val addr    = Input(UInt(addrBits.W))
+                    val wmask   = Input(UInt((width/8).W))
+                    val size    = Input(UInt(2.W))
+                    val wdata   = Input(UInt(width.W))
+                    val rdata   = Output(UInt(width.W))
+                })
+                addResource("/sv/DPIC_SRAM_ONECYC.sv")
+                addResource("/sv/DPIC_TYPES_DEFINE.sv")
+            }
+            val sram = Module(new DPIC_SRAM_ONECYC)
+            sram.io.clk := clock
+            sram.io.rst := reset
+            sram.io.addr := io.addr
+            sram.io.wdata := io.din
+            sram.io.wmask := io.wmask
+            sram.io.size := log2Up(width/8).U
+            sram.io.en := io.en
+            io.dout := sram.io.rdata
+        }
         case _ => {
             val mem = Mem(depth, UInt(width.W))
             // val enable_read = io.en && !io.we

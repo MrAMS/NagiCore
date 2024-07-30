@@ -1,4 +1,4 @@
-package nagicore.loongarch.stages
+package nagicore.loongarch.stages7
 
 import chisel3._
 import chisel3.util._

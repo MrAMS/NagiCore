@@ -43,13 +43,15 @@ class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer) ext
             val valid_reg1 = RegNext(io.vaild)
             arrayMul.io.regEnables(0) := io.vaild
             arrayMul.io.regEnables(1) := valid_reg1
-            val res = arrayMul.io.result
+            // val res = arrayMul.io.result
+            val res = RegNext(arrayMul.io.result)
             io.out := Flags.CasesMux(io.op, Seq(
                 MULU_OP.MUL     -> res(31, 0),
                 MULU_OP.MULH    -> SignExt(res(63, 32), dataBits),
                 MULU_OP.MULHU   -> res(63, 32),
             ), 0.U)
             io.busy := io.vaild || valid_reg1
+            // io.busy := io.vaild || valid_reg1 || RegNext(valid_reg1)
         }
         case _ => {
             io.busy := false.B
