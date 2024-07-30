@@ -2,12 +2,9 @@ package nagicore.loongarch
 
 import chisel3._
 import chisel3.util._
-import nagicore.bus.{AXI4SRAM, AXI4IO, SyncRam, SyncRamType, SyncRamIO}
+import nagicore.bus.{AXI4SRAM, AXI4IO, Ram, RamType, RamIO}
 import nagicore.loongarch.Config
-import nagicore.bus.AXI4Dummy
-import nagicore.bus.AXI4XBar1toN
-import nagicore.bus.AXI4XBarNto1
-import nagicore.bus.AXI4SRAM_MultiCycs
+import nagicore.bus.{AXI4XBar1toN, AXI4XBarNto1, AXI4SRAM_MultiCycs}
 // import stages7.{ID, PREIF, MEM, IF, WB, EX}
 // import nscscc2024.{ID, PREIF, MEM, IF, WB, EX}
 
@@ -105,9 +102,9 @@ class Core extends Module with Config{
     xbar_dmem.io.out(1) <> dsram_ctrl.io.axi
     xbar_dmem.io.out(2) <> uart_axi4.io.axi
 
-    val isram = Module(new SyncRam(XLEN, 1.toLong<<XLEN, SyncRamType.DPIC))
-    val dsram = Module(new SyncRam(XLEN, 1.toLong<<XLEN, SyncRamType.DPIC))
-    val uart = Module(new SyncRam(XLEN, 1.toLong<<XLEN, SyncRamType.DPIC))
+    val isram = Module(new Ram(XLEN, 1.toLong<<XLEN, RamType.DPIC_2CYC))
+    val dsram = Module(new Ram(XLEN, 1.toLong<<XLEN, RamType.DPIC_2CYC))
+    val uart = Module(new Ram(XLEN, 1.toLong<<XLEN, RamType.DPIC_2CYC))
     isram_ctrl.io.sram <> isram.io
     dsram_ctrl.io.sram <> dsram.io
     uart_axi4.io.sram <> uart.io
@@ -116,8 +113,8 @@ class Core extends Module with Config{
 class CoreNSCSCC extends Module with Config{
     val RAM_DEPTH = 0x400000/4
     val io = IO(new Bundle{
-        val isram = Flipped(new SyncRamIO(32, RAM_DEPTH))
-        val dsram = Flipped(new SyncRamIO(32, RAM_DEPTH))
+        val isram = Flipped(new RamIO(32, RAM_DEPTH))
+        val dsram = Flipped(new RamIO(32, RAM_DEPTH))
         val uart = new AXI4IO(XLEN, XLEN)
     })
 

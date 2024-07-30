@@ -236,7 +236,7 @@ class AXI4ReadAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int=
 class AXI4SRAM(addrBits: Int, dataBits: Int, depth: Long, width: Int, idBits: Int=8) extends Module{
     val io = IO(new Bundle{
         val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))
-        val sram = Flipped(new SyncRamIO(dataBits, depth))
+        val sram = Flipped(new RamIO(dataBits, depth))
     })
     io.sram.we := io.axi.w.fire
     io.sram.din := io.axi.w.bits.data
@@ -314,7 +314,7 @@ class AXI4SRAM(addrBits: Int, dataBits: Int, depth: Long, width: Int, idBits: In
 class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long, width: Int, extCycs: Int=0) extends Module{
     val io = IO(new Bundle{
         val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))
-        val sram = Flipped(new SyncRamIO(dataBits, depth))
+        val sram = Flipped(new RamIO(dataBits, depth))
     })
 
     val raddr = Reg(UInt(addrBits.W))
@@ -404,94 +404,94 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
     io.sram.en := rs === rs_r || ws === ws_w
 }
 
-class AXI4Dummy(addrBits: Int, dataBits: Int, idBits: Int=8) extends Module{
-    val io = IO(new Bundle{
-        val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))
-    })
+// class AXI4Dummy(addrBits: Int, dataBits: Int, idBits: Int=8) extends Module{
+//     val io = IO(new Bundle{
+//         val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))
+//     })
 
-    class DPIC_SRAM extends BlackBox(Map("ADDR_WIDTH" -> addrBits, "DATA_WIDTH" -> dataBits)) with HasBlackBoxResource{
-        val io = IO(new Bundle {
-            val clk     = Input(Clock())
-            val rst     = Input(Bool())
-            val en      = Input(Bool())
-            val addr    = Input(UInt(addrBits.W))
-            val wmask   = Input(UInt((dataBits/8).W))
-            val size    = Input(UInt(2.W))
-            val wdata   = Input(UInt(dataBits.W))
-            val rdata   = Output(UInt(dataBits.W))
-        })
-        addResource("/sv/DPIC_SRAM.sv")
-        addResource("/sv/DPIC_TYPES_DEFINE.sv")
-    }
+//     class DPIC_SRAM extends BlackBox(Map("ADDR_WIDTH" -> addrBits, "DATA_WIDTH" -> dataBits)) with HasBlackBoxResource{
+//         val io = IO(new Bundle {
+//             val clk     = Input(Clock())
+//             val rst     = Input(Bool())
+//             val en      = Input(Bool())
+//             val addr    = Input(UInt(addrBits.W))
+//             val wmask   = Input(UInt((dataBits/8).W))
+//             val size    = Input(UInt(2.W))
+//             val wdata   = Input(UInt(dataBits.W))
+//             val rdata   = Output(UInt(dataBits.W))
+//         })
+//         addResource("/sv/DPIC_SRAM.sv")
+//         addResource("/sv/DPIC_TYPES_DEFINE.sv")
+//     }
 
-    val dpic = Module(new DPIC_SRAM)
+//     val dpic = Module(new DPIC_SRAM)
 
-    val rs_idle :: rs_r :: Nil = Enum(2)
-    val rs = RegInit(rs_idle)
-    val rid = Reg(UInt(idBits.W))
-    val raddr = Reg(UInt(addrBits.W)) 
+//     val rs_idle :: rs_r :: Nil = Enum(2)
+//     val rs = RegInit(rs_idle)
+//     val rid = Reg(UInt(idBits.W))
+//     val raddr = Reg(UInt(addrBits.W)) 
 
-    io.axi.ar.ready := true.B
-    when(io.axi.ar.fire){
-        rs := rs_r
-        rid := io.axi.ar.bits.id
-        raddr := io.axi.ar.bits.addr
-        dpic.io.addr := io.axi.ar.bits.addr
-        dpic.io.en := true.B
-        dpic.io.wmask := 0.U
-    }
-    io.axi.r.valid := rs === rs_r
-    io.axi.r.bits.data := dpic.io.rdata
-    io.axi.r.bits.last := io.axi.r.fire
-    io.axi.r.bits.id := rid
-    io.axi.r.bits.resp := 0.U
-    when(io.axi.r.fire){
-        rs := rs_idle
-    }
+//     io.axi.ar.ready := true.B
+//     when(io.axi.ar.fire){
+//         rs := rs_r
+//         rid := io.axi.ar.bits.id
+//         raddr := io.axi.ar.bits.addr
+//         dpic.io.addr := io.axi.ar.bits.addr
+//         dpic.io.en := true.B
+//         dpic.io.wmask := 0.U
+//     }
+//     io.axi.r.valid := rs === rs_r
+//     io.axi.r.bits.data := dpic.io.rdata
+//     io.axi.r.bits.last := io.axi.r.fire
+//     io.axi.r.bits.id := rid
+//     io.axi.r.bits.resp := 0.U
+//     when(io.axi.r.fire){
+//         rs := rs_idle
+//     }
 
-    val ws_idle :: ws_w :: ws_b :: Nil = Enum(3)
-    val ws = RegInit(ws_idle)
-    val wid = Reg(UInt(idBits.W))
-    val waddr = Reg(UInt(addrBits.W))
-    val wdata = Reg(UInt(dataBits.W))
-    val wstrb = Reg(UInt((dataBits/8).W))
-    val wsize = Reg(UInt(io.axi.aw.bits.size.getWidth.W))
+//     val ws_idle :: ws_w :: ws_b :: Nil = Enum(3)
+//     val ws = RegInit(ws_idle)
+//     val wid = Reg(UInt(idBits.W))
+//     val waddr = Reg(UInt(addrBits.W))
+//     val wdata = Reg(UInt(dataBits.W))
+//     val wstrb = Reg(UInt((dataBits/8).W))
+//     val wsize = Reg(UInt(io.axi.aw.bits.size.getWidth.W))
 
-    io.axi.aw.ready := true.B
-    when(io.axi.aw.fire){
-        ws := ws_w
-        waddr := io.axi.aw.bits.addr
-        wid := io.axi.aw.bits.id
-        wsize := io.axi.aw.bits.size
-        ws := ws_w
-    }
+//     io.axi.aw.ready := true.B
+//     when(io.axi.aw.fire){
+//         ws := ws_w
+//         waddr := io.axi.aw.bits.addr
+//         wid := io.axi.aw.bits.id
+//         wsize := io.axi.aw.bits.size
+//         ws := ws_w
+//     }
 
-    io.axi.w.ready := ws === ws_w
-    when(io.axi.w.fire){
-        ws := ws_b
-        dpic.io.addr := waddr
-        dpic.io.wdata := io.axi.w.bits.data
-        dpic.io.wmask := Mux(io.axi.r.fire, 0.U, io.axi.w.bits.strb)
-        dpic.io.size := wsize
-        dpic.io.en := true.B
-    }
+//     io.axi.w.ready := ws === ws_w
+//     when(io.axi.w.fire){
+//         ws := ws_b
+//         dpic.io.addr := waddr
+//         dpic.io.wdata := io.axi.w.bits.data
+//         dpic.io.wmask := Mux(io.axi.r.fire, 0.U, io.axi.w.bits.strb)
+//         dpic.io.size := wsize
+//         dpic.io.en := true.B
+//     }
 
-    when(io.axi.b.fire){
-        ws := ws_idle
-    }
+//     when(io.axi.b.fire){
+//         ws := ws_idle
+//     }
 
-    io.axi.b.valid := ws === ws_b
-    io.axi.b.bits.resp := 0.U
-    io.axi.b.bits.id := wid
+//     io.axi.b.valid := ws === ws_b
+//     io.axi.b.bits.resp := 0.U
+//     io.axi.b.bits.id := wid
 
-    dpic.io.clk := clock
-    dpic.io.rst := reset
-    dpic.io.addr := 0.U
-    dpic.io.wmask := 0.U
-    dpic.io.size := 0.U
-    dpic.io.wdata := 0.U
-    dpic.io.en := false.B
-}
+//     dpic.io.clk := clock
+//     dpic.io.rst := reset
+//     dpic.io.addr := 0.U
+//     dpic.io.wmask := 0.U
+//     dpic.io.size := 0.U
+//     dpic.io.wdata := 0.U
+//     dpic.io.en := false.B
+// }
 
 class AXI4XBar1toN(addrBits: Int, dataBits: Int, idBits: Int, addressSpace: List[(Long, Long, Boolean)]) extends Module {
   val io = IO(new Bundle {

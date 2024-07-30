@@ -26,10 +26,10 @@ object CacheReplaceType extends Enumeration {
   * @param imp
   */
 class CacheMem(width: Int, depth: Int, imp: CacheMemType.CacheMemType=CacheMemType.Reg) extends Module{
-    val io = IO(new SyncRamIO(width, depth))
+    val io = IO(new RamIO(width, depth))
     imp match {
         case _ => {
-            val sram = Module(new SyncRam(width, depth))
+            val sram = Module(new Ram(width, depth))
             sram.io <> io
         }
     }
@@ -274,7 +274,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
         state_s2 := Stage2State.replace
     }
 
-    def writeSyncRam(io: SyncRamIO, addr: UInt, data: UInt) = {
+    def writeSyncRam(io: RamIO, addr: UInt, data: UInt) = {
         io.addr := addr
         io.en := true.B
         io.we := true.B

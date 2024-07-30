@@ -69,10 +69,7 @@ wire        io_isram_en;
 wire        io_isram_we;
 wire [3:0]  io_isram_wmask;
 
-ram_wrapper_through iwrapper(
-    // .clk            (clk_50M),
-    // .rst            (reset_btn),
-    
+ram_wrapper iwrapper(
     .ram_data       (base_ram_data),
     .ram_addr       (base_ram_addr),
     .ram_be_n       (base_ram_be_n),
@@ -95,10 +92,7 @@ wire        io_dsram_en;
 wire        io_dsram_we;
 wire [3:0]  io_dsram_wmask;
 
-ram_wrapper_through dwrapper(
-    // .clk            (clk_50M),
-    // .rst            (reset_btn),
-    
+ram_wrapper dwrapper(
     .ram_data       (ext_ram_data),
     .ram_addr       (ext_ram_addr),
     .ram_be_n       (ext_ram_be_n),

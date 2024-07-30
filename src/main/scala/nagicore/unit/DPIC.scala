@@ -1,7 +1,7 @@
 package nagicore.unit
 import chisel3._
 import chisel3.util._
-import nagicore.bus.SyncRamIO
+import nagicore.bus.RamIO
 
 
 // TODO delete
