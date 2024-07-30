@@ -4,16 +4,39 @@ import chisel3.util._
 import nagicore.bus.RamIO
 
 
-// TODO delete
-// class DPIC_SRAM(addr_width: Int, data_width: Int) extends BlackBox(Map("ADDR_WIDTH" -> addr_width, "DATA_WIDTH" -> data_width)) with HasBlackBoxResource{
-//     val io = IO(new Bundle {
-//         val clk     = Input(Clock())
-//         val rst     = Input(Bool())
-//         val data    = new CachePipedIO(addr_width, data_width, () => new SyncRamIO(addr_width, data_width))
-//     })
-//     addResource("/sv/DPIC_SRAM.sv")
-//     addResource("/sv/DPIC_TYPES_DEFINE.sv")
-// }
+class DPIC_RAM_1CYC(addr_width: Int, data_width: Int) extends BlackBox(Map("ADDR_WIDTH" -> addr_width, "DATA_WIDTH" -> data_width)) with HasBlackBoxResource{
+    val io = IO(new Bundle {
+        val clk     = Input(Clock())
+        val rst     = Input(Bool())
+        val en      = Input(Bool())
+        val addr    = Input(UInt(addr_width.W))
+        val re      = Input(Bool())
+        val we      = Input(Bool())
+        val wmask   = Input(UInt((data_width/8).W))
+        val size    = Input(UInt(2.W))
+        val wdata   = Input(UInt(data_width.W))
+        val rdata   = Output(UInt(data_width.W))
+    })
+    addResource("/sv/DPIC_RAM_1CYC.sv")
+    addResource("/sv/DPIC_TYPES_DEFINE.sv")
+}
+
+class DPIC_RAM_2CYC(addr_width: Int, data_width: Int) extends BlackBox(Map("ADDR_WIDTH" -> addr_width, "DATA_WIDTH" -> data_width)) with HasBlackBoxResource{
+    val io = IO(new Bundle {
+        val clk     = Input(Clock())
+        val rst     = Input(Bool())
+        val en      = Input(Bool())
+        val addr    = Input(UInt(addr_width.W))
+        val re      = Input(Bool())
+        val we      = Input(Bool())
+        val wmask   = Input(UInt((data_width/8).W))
+        val size    = Input(UInt(2.W))
+        val wdata   = Input(UInt(data_width.W))
+        val rdata   = Output(UInt(data_width.W))
+    })
+    addResource("/sv/DPIC_RAM_2CYC.sv")
+    addResource("/sv/DPIC_TYPES_DEFINE.sv")
+}
 
 class DPIC_UPDATE_GPR(gpr_num: Int, data_width: Int) extends BlackBox(Map("GPR_NUM" -> gpr_num, "DATA_WIDTH" -> data_width)) with HasBlackBoxResource{
     val io = IO(new Bundle{

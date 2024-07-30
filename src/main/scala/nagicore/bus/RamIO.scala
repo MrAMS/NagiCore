@@ -15,7 +15,7 @@ class RamIO(width: Int, depth: Long) extends Bundle{
     val dout    = Output(UInt(width.W))
     val en      = Input(Bool())
     val we      = Input(Bool())
-    // val re      = Input(Bool())
+    val re      = Input(Bool())
     val wmask   = Input(UInt((width/8).W))
 }
 
@@ -31,26 +31,13 @@ class Ram(width: Int, depth: Long, imp: RamType.RamType=RamType.RAM_2CYC) extend
     val addrBits = log2Up(depth)
     imp match {
         case RamType.DPIC_2CYC => {
-            class DPIC_SRAM extends BlackBox(Map("ADDR_WIDTH" -> addrBits, "DATA_WIDTH" -> width)) with HasBlackBoxResource{
-                val io = IO(new Bundle {
-                    val clk     = Input(Clock())
-                    val rst     = Input(Bool())
-                    val en      = Input(Bool())
-                    val addr    = Input(UInt(addrBits.W))
-                    // val re      = Input(Bool())
-                    // val we      = Input(Bool())
-                    val wmask   = Input(UInt((width/8).W))
-                    val size    = Input(UInt(2.W))
-                    val wdata   = Input(UInt(width.W))
-                    val rdata   = Output(UInt(width.W))
-                })
-                addResource("/sv/DPIC_SRAM.sv")
-                addResource("/sv/DPIC_TYPES_DEFINE.sv")
-            }
-            val sram = Module(new DPIC_SRAM)
+            import nagicore.unit.DPIC_RAM_2CYC
+            val sram = Module(new DPIC_RAM_2CYC(addrBits, width))
             sram.io.clk := clock
             sram.io.rst := reset
             sram.io.addr := io.addr
+            sram.io.re := io.re
+            sram.io.we := io.we
             sram.io.wdata := io.din
             sram.io.wmask := io.wmask
             sram.io.size := log2Up(width/8).U
@@ -58,25 +45,14 @@ class Ram(width: Int, depth: Long, imp: RamType.RamType=RamType.RAM_2CYC) extend
             io.dout := sram.io.rdata
         }
         case RamType.DPIC_1CYC => {
-            class DPIC_SRAM_ONECYC extends BlackBox(Map("ADDR_WIDTH" -> addrBits, "DATA_WIDTH" -> width)) with HasBlackBoxResource{
-                val io = IO(new Bundle {
-                    val clk     = Input(Clock())
-                    val rst     = Input(Bool())
-                    val en      = Input(Bool())
-                    val addr    = Input(UInt(addrBits.W))
-                    val wmask   = Input(UInt((width/8).W))
-                    val size    = Input(UInt(2.W))
-                    val wdata   = Input(UInt(width.W))
-                    val rdata   = Output(UInt(width.W))
-                })
-                addResource("/sv/DPIC_SRAM_ONECYC.sv")
-                addResource("/sv/DPIC_TYPES_DEFINE.sv")
-            }
-            val sram = Module(new DPIC_SRAM_ONECYC)
+            import nagicore.unit.DPIC_RAM_1CYC
+            val sram = Module(new DPIC_RAM_1CYC(addrBits, width))
             sram.io.clk := clock
             sram.io.rst := reset
             sram.io.addr := io.addr
             sram.io.wdata := io.din
+            sram.io.re := io.re
+            sram.io.we := io.we
             sram.io.wmask := io.wmask
             sram.io.size := log2Up(width/8).U
             sram.io.en := io.en

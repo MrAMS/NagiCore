@@ -238,10 +238,6 @@ class AXI4SRAM(addrBits: Int, dataBits: Int, depth: Long, width: Int, idBits: In
         val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))
         val sram = Flipped(new RamIO(dataBits, depth))
     })
-    io.sram.we := io.axi.w.fire
-    io.sram.din := io.axi.w.bits.data
-    io.sram.wmask := Mux(io.axi.w.fire, io.axi.w.bits.strb, 0.U)
-
     val raddr = Reg(UInt(addrBits.W))
     val rid   = Reg(UInt(idBits.W))
     val rlen  = Reg(UInt(8.W))
@@ -308,6 +304,10 @@ class AXI4SRAM(addrBits: Int, dataBits: Int, depth: Long, width: Int, idBits: In
     val sram_addr = Mux(io.axi.w.fire, waddr, Mux(!io.axi.ar.fire, raddr, io.axi.ar.bits.addr))(addrBits-1, log2Ceil(width/8))
     io.sram.addr := sram_addr
     val sram_read_req = io.axi.ar.fire || rlen =/= 0.U
+    io.sram.we := io.axi.w.fire
+    io.sram.re := sram_read_req
+    io.sram.din := io.axi.w.bits.data
+    io.sram.wmask := io.axi.w.bits.strb
     io.sram.en := sram_read_req || io.axi.w.fire
 }
 
@@ -396,9 +396,10 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
     io.axi.b.valid := ws === ws_b
     io.axi.b.bits.resp := 0.U
 
-    io.sram.we := ws===ws_w
+    io.sram.we := ws === ws_w
+    io.sram.re := rs === rs_r
     io.sram.din := io.axi.w.bits.data
-    io.sram.wmask := Mux(ws===ws_w, io.axi.w.bits.strb, 0.U)
+    io.sram.wmask := io.axi.w.bits.strb
     val sram_addr = Mux(ws === ws_w, waddr, raddr)(addrBits-1, log2Ceil(width/8))
     io.sram.addr := sram_addr
     io.sram.en := rs === rs_r || ws === ws_w

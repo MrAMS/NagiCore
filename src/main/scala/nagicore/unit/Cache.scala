@@ -150,6 +150,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     tag_v_io.map(io => {
         io.addr := addr_idx
         io.en := pipego
+        io.re := true.B
         io.we := false.B
         io.din := 0.U
         io.wmask := Fill(len_tag+1, true.B)
@@ -157,6 +158,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     data_bank_io.map(_.map(io => {
         io.addr := addr_idx
         io.en := pipego
+        io.re := true.B
         io.we := false.B
         io.din := 0.U
         io.wmask := Fill(dataBits, true.B)
@@ -164,6 +166,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     dirty_io.map(io => {
         io.addr := addr_idx
         io.en := pipego
+        io.re := true.B
         io.we := false.B
         io.din := 0.U
         io.wmask := Fill(1, true.B)
@@ -277,6 +280,7 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     def writeSyncRam(io: RamIO, addr: UInt, data: UInt) = {
         io.addr := addr
         io.en := true.B
+        io.re := false.B
         io.we := true.B
         io.din := data
     }
