@@ -79,8 +79,8 @@ class Core extends Module with nscscc2024.Config{
     wb_part.io.wb2id <> id_part.io.wb2id
     wb_part.io.stall_all := false.B
 
-    val isram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 2))
-    val dsram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 2))
+    val isram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3))
+    val dsram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3))
     val uart_axi4 = Module(new AXI4SRAM(XLEN, XLEN, 1.toLong<<XLEN, 8))
 
     // val dummy = Module(new AXI4Dummy(XLEN, XLEN))

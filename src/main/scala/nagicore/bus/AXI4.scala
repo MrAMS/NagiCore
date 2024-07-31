@@ -338,10 +338,6 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
         rlen := io.axi.ar.bits.len
         rs := rs_r
     }
-    // val access_in_advence = !io.axi.r.valid && rs =/= rs_idle
-    // when(access_in_advence){
-    //     raddr := raddr + (dataBits/8).U
-    // }
 
     when(io.axi.r.fire){
         raddr := raddr + (dataBits/8).U

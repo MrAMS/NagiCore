@@ -7,7 +7,7 @@ import nagicore.bus.{Ram, RamIO}
 
 object CacheMemType extends Enumeration {
     type CacheMemType = Value
-    val Reg, BlockRAM = Value
+    val RAM_2cyc, BRAM_1cyc, RAM_1cyc = Value
 }
 
 object CacheReplaceType extends Enumeration {
@@ -22,7 +22,7 @@ object CacheReplaceType extends Enumeration {
   * @param depth
   * @param imp
   */
-class CacheMem(width: Int, depth: Int, imp: CacheMemType.CacheMemType=CacheMemType.Reg) extends Module{
+class CacheMem(width: Int, depth: Int, imp: CacheMemType.CacheMemType=CacheMemType.RAM_2cyc) extends Module{
     val io = IO(new RamIO(width, depth))
     imp match {
         case _ => {

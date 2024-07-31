@@ -17,7 +17,7 @@ module ram_wrapper(
 
 assign ram_addr = io_sram_addr;
 wire we = io_sram_en&&io_sram_we;
-wire re = io_sram_en&&io_sram_re;
+wire re = !we; // 这样比io_sram_en&&io_sram_re时序要好点
 assign ram_be_n = we?~io_sram_wmask:0;
 assign ram_ce_n = 0;
 assign ram_oe_n = !re;

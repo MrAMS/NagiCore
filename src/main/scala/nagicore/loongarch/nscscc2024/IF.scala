@@ -3,8 +3,8 @@ package nagicore.loongarch.nscscc2024
 import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
-import nagicore.unit.{InstrsBuff, InstrsBuffCacheBundle}
-import nagicore.unit.cache.CachePiped
+//import nagicore.unit.{InstrsBuff, InstrsBuffCacheBundle}
+import nagicore.unit.cache.Cache
 import nagicore.loongarch.CtrlFlags
 import nagicore.GlobalConfg
 
@@ -28,27 +28,25 @@ class IF extends Module with Config{
         val isram = new AXI4IO(XLEN, XLEN)
     })
     // 2-stages cache
-    val icache = Module(new CachePiped(XLEN, XLEN, ICACHE_WAYS, ICACHE_LINES, ICACHE_WORDS, () => new InstrsBuffCacheBundle, 0))
+    val icache = Module(new Cache(XLEN, XLEN, ICACHE_WAYS, ICACHE_LINES, ICACHE_WORDS, 0, () => new preif2ifBits()))
     icache.io.axi <> io.isram
-    val instrs_buff = Module(new InstrsBuff(XLEN, XLEN, ICACHE_WORDS, INSTRS_BUFF_SIZE))
-    instrs_buff.io.cache <> icache.io.master
 
-    // pipeline registers
-    val preg = RegEnable(io.preif2if.bits, !io.if2id.stall && !instrs_buff.io.out.busy)
+    icache.io.master.front.bits.addr := io.preif2if.bits.pc
+    icache.io.master.front.bits.size := 2.U
+    icache.io.master.front.bits.uncache := false.B
+    icache.io.master.front.bits.wmask := 0.U
+    icache.io.master.front.bits.valid := io.preif2if.bits.valid
+    icache.io.master.front.bits.wdata := DontCare
+    icache.io.master.front.bits.pipedata := io.preif2if.bits
+    icache.io.master.back.stall := io.if2id.stall
 
-    instrs_buff.io.in.fetch := preg.valid && !io.if2id.stall // TODO
-    instrs_buff.io.in.new_trans := preg.jump && preg.valid && RegNext(!instrs_buff.io.out.busy)
-    instrs_buff.io.in.trans_addr := preg.pc
 
-    io.if2id.bits.instr := instrs_buff.io.out.instr
-    io.if2id.bits.valid := !instrs_buff.io.out.busy && preg.valid
-    io.if2id.bits.pc := preg.pc
-    io.if2id.bits.pred_nxt_pc := preg.pred_nxt_pc
+    io.if2id.bits.instr := icache.io.master.back.bits.rdata
+    io.if2id.bits.valid := icache.io.master.back.bits.valid
+    io.if2id.bits.pc := icache.io.master.back.bits.pipedata.pc
+    io.if2id.bits.pred_nxt_pc := icache.io.master.back.bits.pipedata.pred_nxt_pc
 
-    io.preif2if.stall := instrs_buff.io.out.busy || io.if2id.stall
-
-    // assert(instrs_buff.io.out.instr===0.U && (!instrs_buff.io.out.busy) && preg.valid)
-
+    io.preif2if.stall := icache.io.master.front.stall
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_PERF_PIPE

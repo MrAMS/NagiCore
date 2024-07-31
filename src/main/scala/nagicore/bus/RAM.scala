@@ -2,11 +2,12 @@ package nagicore.bus
 
 import chisel3._
 import chisel3.util._
-import nagicore.unit.cache.CacheMemType.Value
+import nagicore.unit.cache.CacheMemType.{RAM_2cyc, Value}
+import nagicore.GlobalConfg
 
 object RamType extends Enumeration {
     type RamType = Value
-    val RAM_2CYC, DPIC_2CYC, DPIC_1CYC = Value
+    val RAM_2CYC, RAM_1CYC, BRAM_1CYC, DPIC_2CYC, DPIC_1CYC = Value
 }
 
 class RamIO(width: Int, depth: Long) extends Bundle{
@@ -57,6 +58,48 @@ class Ram(width: Int, depth: Long, imp: RamType.RamType=RamType.RAM_2CYC) extend
             sram.io.size := log2Up(width/8).U
             sram.io.en := io.en
             io.dout := sram.io.rdata
+        }
+        case RamType.RAM_1CYC | RamType.BRAM_1CYC => {
+            if(imp==RamType.BRAM_1CYC && !GlobalConfg.SIM){
+                Predef.println(s"Xilinx BlockRAM IP blk_mem_${width}_${depth} needed")
+                class BlockRAMIP extends BlackBox{
+                    override val desiredName = s"blk_mem_${width}_${depth}"
+                    val io = IO(new Bundle {
+                        val addra   = Input(UInt(addrBits.W))
+                        val clka    = Input(Clock())
+                        val dina    = Input(UInt(width.W))
+                        val douta   = Output(UInt(width.W))
+                        val ena     = Input(Bool())
+                        val wea     = Input(Bool())
+                    })
+                }
+                val bram = Module(new BlockRAMIP)
+                bram.io.clka := clock
+                bram.io.addra := io.addr
+                bram.io.dina := io.din
+                bram.io.wea := io.we
+                bram.io.ena := io.en
+                io.dout := bram.io.douta
+            }else{
+                if(width%8==0){
+                    val bytes = width/8
+                    val mem = Mem(depth, Vec(bytes, UInt(8.W)))
+                    when(io.en&&io.we){
+                        val wdata = VecInit.tabulate(bytes){
+                            i => io.din(8*((bytes-1-i)+1)-1, 8*(bytes-1-i))
+                        }
+                        mem.write(io.addr, wdata, io.wmask.asBools)
+                    }
+                    // WRITE_FIRST Mode
+                    io.dout := Cat(mem.read(io.addr))
+                }else{
+                    val mem = Mem(depth, UInt(width.W))
+                    when(io.en&&io.we){
+                        mem.write(io.addr, io.din)
+                    }
+                    io.dout := mem.read(io.addr)
+                }
+            }
         }
         case _ => {
             /**
