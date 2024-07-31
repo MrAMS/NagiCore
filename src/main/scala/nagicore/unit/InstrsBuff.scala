@@ -2,25 +2,9 @@ package nagicore.unit
 
 import chisel3._
 import chisel3.util._
-import os.stat
 import nagicore.loongarch.CtrlFlags.ldType.bu
-
-// class InstrsBuffIOFrontBits(addrBits:Int, dataBits: Int) extends Bundle{
-
-// }
-
-// class InstrsBuffIOFront(addrBits:Int, dataBits: Int) extends Bundle{
-//     val bits    = Input(new InstrsBuffIOFrontBits(addrBits, dataBits))
-// }
-
-// class InstrsBuffIOBackBits(addrBits:Int, dataBits: Int) extends Bundle{
-//     val valid = Output(Bool())
-
-// }
-
-// class InstrsBuffIOBack(addrBits:Int, dataBits: Int) extends Bundle{
-//     val bits    = Output(new InstrsBuffIOBackBits(addrBits, dataBits))
-// }
+import nagicore.GlobalConfg
+import cache.CachePipedIO
 
 class InstrsBuffCacheBundle extends Bundle{
     val new_trans = Bool()
@@ -55,9 +39,11 @@ class InstrsBuff(addrBits:Int, dataBits: Int, cacheBlockWords: Int, blockLen: In
     val io = IO(new InstrsBuffIO(addrBits, dataBits, cacheBlockWords))
     val buff = RegInit(VecInit(Seq.fill(blockLen*cacheBlockWords)(0.U(dataBits.W))))
     val buff_head = RegInit(0.U(log2Up(blockLen*cacheBlockWords).W))
-    dontTouch(buff_head)
     val buff_tail = RegInit(0.U(log2Up(blockLen*cacheBlockWords).W))
-    dontTouch(buff_tail)
+    if(GlobalConfg.SIM){
+        dontTouch(buff_head)
+        dontTouch(buff_tail)
+    }
     val buff_valid = RegInit(VecInit.fill(blockLen*cacheBlockWords)(false.B))
     val empty = !buff_valid(buff_head)
     val full = buff_valid(buff_tail + (cacheBlockWords-1).U)
@@ -149,4 +135,13 @@ class InstrsBuff(addrBits:Int, dataBits: Int, cacheBlockWords: Int, blockLen: In
     io.cache.front.bits.wdata := DontCare
     io.cache.front.bits.wmask := 0.U
     io.cache.back.stall := full
+
+    if(GlobalConfg.SIM){
+        val dpic_perf_instrs_buff = Module(new DPIC_PERF_INSTRS_BUFF)
+        dpic_perf_instrs_buff.io.clk := clock
+        dpic_perf_instrs_buff.io.rst := reset
+        dpic_perf_instrs_buff.io.head := buff_head
+        dpic_perf_instrs_buff.io.tail := buff_tail
+        dpic_perf_instrs_buff.io.reload := io.in.new_trans
+    }
 }

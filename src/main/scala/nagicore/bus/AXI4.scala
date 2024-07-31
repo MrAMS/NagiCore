@@ -377,6 +377,7 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
         wid := io.axi.aw.bits.id
         wlen := io.axi.aw.bits.len
         ws := ws_w
+        assert(io.axi.w.valid)
     }
     when(io.axi.w.fire){
         waddr := waddr + (dataBits/8).U
@@ -494,6 +495,7 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
 //     dpic.io.en := false.B
 // }
 
+// ref: https://github.com/BUAA-CI-LAB/eulacore
 class AXI4XBar1toN(addrBits: Int, dataBits: Int, idBits: Int, addressSpace: List[(Long, Long, Boolean)]) extends Module {
   val io = IO(new Bundle {
     val in = Flipped(new AXI4IO(addrBits, dataBits))
@@ -597,6 +599,7 @@ class AXI4XBar1toN(addrBits: Int, dataBits: Int, idBits: Int, addressSpace: List
   io.in.w.ready := woutSel.w.ready
 }
 
+// ref: https://github.com/BUAA-CI-LAB/eulacore
 class AXI4XBarNto1(n: Int, addrBits: Int, dataBits: Int, idBits: Int) extends Module {
   val io = IO(new Bundle {
     val in = Flipped(Vec(n, new AXI4IO(addrBits, dataBits, idBits)))

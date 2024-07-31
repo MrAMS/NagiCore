@@ -2,7 +2,6 @@ package nagicore.loongarch.stages7
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.Config
 import nagicore.loongarch.CtrlFlags
 import nagicore.utils.Flags
 import nagicore.GlobalConfg

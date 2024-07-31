@@ -3,10 +3,11 @@ package nagicore.unit
 import chisel3._
 import chisel3.util._
 import nagicore.utils._
+import nagicore.GlobalConfg
 
 object MULU_IMP extends Enumeration {
     type MULU_IMP = Value
-    val synthesizer, oneBitShift, xsArrayMul = Value
+    val synthesizer_1cyc, oneBitShift, xsArrayMul = Value
 }
 
 object MULU_OP{
@@ -25,7 +26,7 @@ object MULU_OP{
   *                   xsArrayMul:  使用香山的三周期ArrayMulDataModule实现
   * @note 注意valid信号只拉高一周期即可，busy在下一个周期开始拉高，直到乘法运算结束时拉低
   */
-class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer) extends Module{
+class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer_1cyc) extends Module{
     val io = IO(new Bundle{
         val a   = Input(UInt(dataBits.W))
         val b   = Input(UInt(dataBits.W))
@@ -36,21 +37,30 @@ class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer) ext
     })
     imp_way match {
         case MULU_IMP.xsArrayMul => {
-            import nagicore.unit.ip.Xiangshan.ArrayMulDataModule
-            val arrayMul = Module(new ArrayMulDataModule(dataBits+1))
-            arrayMul.io.a := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.a(dataBits-1)) ## io.a
-            arrayMul.io.b := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.b(dataBits-1)) ## io.b
-            val valid_reg1 = RegNext(io.vaild)
-            arrayMul.io.regEnables(0) := io.vaild
-            arrayMul.io.regEnables(1) := valid_reg1
-            // val res = arrayMul.io.result
-            val res = RegNext(arrayMul.io.result)
-            io.out := Flags.CasesMux(io.op, Seq(
-                MULU_OP.MUL     -> res(31, 0),
-                MULU_OP.MULH    -> SignExt(res(63, 32), dataBits),
-                MULU_OP.MULHU   -> res(63, 32),
-            ), 0.U)
-            io.busy := io.vaild || valid_reg1
+            if(GlobalConfg.SIM){
+                io.busy := io.vaild || RegNext(io.vaild)
+                io.out := Flags.CasesMux(io.op, Seq(
+                    MULU_OP.MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
+                    MULU_OP.MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
+                    MULU_OP.MULHU   -> (io.a * io.b)(63, 32),
+                ), 0.U)
+            }else{
+                import nagicore.unit.ip.Xiangshan.ArrayMulDataModule
+                val arrayMul = Module(new ArrayMulDataModule(dataBits+1))
+                arrayMul.io.a := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.a(dataBits-1)) ## io.a
+                arrayMul.io.b := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.b(dataBits-1)) ## io.b
+                val valid_reg1 = RegNext(io.vaild)
+                arrayMul.io.regEnables(0) := io.vaild
+                arrayMul.io.regEnables(1) := valid_reg1
+                // val res = arrayMul.io.result
+                val res = RegNext(arrayMul.io.result)
+                io.out := Flags.CasesMux(io.op, Seq(
+                    MULU_OP.MUL     -> res(31, 0),
+                    MULU_OP.MULH    -> SignExt(res(63, 32), dataBits),
+                    MULU_OP.MULHU   -> res(63, 32),
+                ), 0.U)
+                io.busy := io.vaild || valid_reg1
+            }
             // io.busy := io.vaild || valid_reg1 || RegNext(valid_reg1)
         }
         case _ => {

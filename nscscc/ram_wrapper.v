@@ -10,13 +10,14 @@ module ram_wrapper(
     input [19:0]        io_sram_addr,
     input [31:0]        io_sram_din,
     input               io_sram_en,
+                        io_sram_re,
                         io_sram_we,
     input [3:0]         io_sram_wmask
 );
 
 assign ram_addr = io_sram_addr;
 wire we = io_sram_en&&io_sram_we;
-wire re = io_sram_en&&!io_sram_we;
+wire re = io_sram_en&&io_sram_re;
 assign ram_be_n = we?~io_sram_wmask:0;
 assign ram_ce_n = 0;
 assign ram_oe_n = !re;

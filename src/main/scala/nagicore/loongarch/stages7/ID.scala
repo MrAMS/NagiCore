@@ -2,7 +2,6 @@ package nagicore.loongarch.stages7
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.Config
 import nagicore.loongarch.Decoder
 import nagicore.unit.GPR
 import nagicore.loongarch.CtrlFlags
@@ -48,7 +47,7 @@ class ID extends Module with Config{
     io.id2ex.bits.valid := preg.valid
     io.if2id.stall := io.id2ex.stall
 
-    val decoder = Module(new Decoder)
+    val decoder = Module(new Decoder(XLEN, GPR_LEN))
     decoder.io.instr := preg.instr
 
     io.id2ex.bits.instr    := preg.instr

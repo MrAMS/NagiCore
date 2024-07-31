@@ -2,7 +2,6 @@ package nagicore.loongarch.nscscc2024
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.Config
 import nagicore.utils.Flags
 import nagicore.loongarch.CtrlFlags
 import nagicore.unit.ALU
@@ -89,22 +88,33 @@ class EX extends Module with Config{
     io.ex2mem.bits.valid := valid_instr
                     
     kill_nxt := Mux(!stall_nxt && !busy && (kill_nxt === 0.U || io.id2ex.bits.valid),
-                    /* 当分支预测失败时，应该无视接下来4条有效指令(IF,IMEM1,IMEM2,ID) */
+                    /* 当分支预测失败时，应该无视接下来3条有效指令(PREIF,IF,ID) */
                     Mux(br_pred_fail, 3.U,
-                        // Mux(is_ld, 3.U,
+                        // Mux(is_ld, 1.U,
                             Mux(kill_nxt===0.U, 0.U,
                                 kill_nxt-1.U
                             )
                         // )
-                    ), kill_nxt)
-                // we must stall 2 cycs until ld instr get value from mem and reach wb stage
+                    ), kill_nxt
+                )
     stall_pre_counter := Mux(!stall_nxt,
-                            /* 当遇到加载指令时，应该请求上一级阻塞2个周期，并且无视接下来3个周期的指令(EX, DMEM1, DMEM2) */
-                            Mux(is_ld, 3.U,
+                            /* 当遇到加载指令时，应该请求上一级阻塞1个周期，并且无视接下来2个周期的指令(EX, DMEM) */
+                            Mux(is_ld, 2.U,
                                 Mux(stall_pre_counter===0.U, 0.U,
                                     stall_pre_counter-1.U
                                 )
                             ), stall_pre_counter)
+    // stall_pre_counter := Mux(!stall_nxt,
+    //                     /* 当遇到加载指令时，应该请求上一级阻塞1个周期，并且无视接下来2个周期的指令(EX, DMEM) */
+    //                     Mux(is_ld,
+    //                         Mux(preg.ld_type === Flags.bp(CtrlFlags.ldType.w),
+    //                             1.U,
+    //                             2.U
+    //                         ),
+    //                         Mux(stall_pre_counter===0.U, 0.U,
+    //                             stall_pre_counter-1.U
+    //                         )
+    //                     ), stall_pre_counter)
 
     io.ex2preif.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.bp(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
 

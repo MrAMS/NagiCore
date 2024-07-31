@@ -2,7 +2,6 @@ package nagicore.loongarch.nscscc2024
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.Config
 import nagicore.loongarch.Decoder
 import nagicore.unit.GPR
 import nagicore.loongarch.CtrlFlags
@@ -48,7 +47,7 @@ class ID extends Module with Config{
     io.id2ex.bits.valid := preg.valid
     io.if2id.stall := io.id2ex.stall
 
-    val decoder = Module(new Decoder)
+    val decoder = Module(new Decoder(XLEN, GPR_LEN))
     decoder.io.instr := preg.instr
 
     io.id2ex.bits.instr    := preg.instr
@@ -64,11 +63,9 @@ class ID extends Module with Config{
     // bypass
     io.id2ex.bits.ra_val := Mux(ra === 0.U, 0.U,
                                 Mux(io.ex2id.bypass_rc === ra, io.ex2id.bypass_val,
-                                    Mux(io.mem2id.bypass1_rc === ra, io.mem2id.bypass1_val,
-                                        Mux(io.mem2id.bypass2_rc === ra, io.mem2id.bypass2_val,
-                                            Mux(io.wb2id.bypass_rc === ra, io.wb2id.bypass_val,
-                                                gpr.io.rdata(0)
-                                            )
+                                    Mux(io.mem2id.bypass_rc === ra, io.mem2id.bypass_val,
+                                        Mux(io.wb2id.bypass_rc === ra, io.wb2id.bypass_val,
+                                            gpr.io.rdata(0)
                                         )
                                     )
                                 )
@@ -79,16 +76,14 @@ class ID extends Module with Config{
     gpr.io.raddr(1) := rb
     // bypass
     io.id2ex.bits.rb_val := Mux(rb === 0.U, 0.U,
-                        Mux(io.ex2id.bypass_rc === rb, io.ex2id.bypass_val,
-                            Mux(io.mem2id.bypass1_rc === rb, io.mem2id.bypass1_val,
-                                Mux(io.mem2id.bypass2_rc === rb, io.mem2id.bypass2_val,
-                                    Mux(io.wb2id.bypass_rc === rb, io.wb2id.bypass_val,
-                                            gpr.io.rdata(1)
-                                        )
+                                Mux(io.ex2id.bypass_rc === rb, io.ex2id.bypass_val,
+                                    Mux(io.mem2id.bypass_rc === rb, io.mem2id.bypass_val,
+                                        Mux(io.wb2id.bypass_rc === rb, io.wb2id.bypass_val,
+                                                gpr.io.rdata(1)
+                                            )
+                                    )
+                                )
                             )
-                        )
-                    )
-    )
 
     io.id2ex.bits.aluB_sel := decoder.io.aluB_sel
 

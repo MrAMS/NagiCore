@@ -2,7 +2,6 @@ package nagicore.loongarch.stages7
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.Config
 
 class preif2ifBits extends Bundle with Config{
     val pc          = UInt(XLEN.W)

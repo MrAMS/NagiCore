@@ -3,8 +3,8 @@ package nagicore.loongarch.stages7
 import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
-import nagicore.loongarch.Config
-import nagicore.unit.{CachePiped, InstrsBuff, InstrsBuffCacheBundle}
+import nagicore.unit.{InstrsBuff, InstrsBuffCacheBundle}
+import nagicore.unit.cache.CachePiped
 import nagicore.loongarch.CtrlFlags
 import nagicore.GlobalConfg
 
@@ -57,6 +57,6 @@ class IF extends Module with Config{
         perf_pipe_icache.io.rst := reset
         perf_pipe_icache.io.id := 0.U
         perf_pipe_icache.io.invalid := !io.if2id.bits.valid
-        perf_pipe_icache.io.stall := instrs_buff.io.out.busy
+        perf_pipe_icache.io.stall := io.preif2if.stall
     }
 }

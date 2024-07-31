@@ -3,9 +3,8 @@ package nagicore.loongarch.stages7
 import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
-import nagicore.loongarch.Config
 import nagicore.loongarch.CtrlFlags
-import nagicore.unit.{CachePiped}
+import nagicore.unit.cache.CachePiped
 import nagicore.utils.Flags
 import nagicore.GlobalConfg
 

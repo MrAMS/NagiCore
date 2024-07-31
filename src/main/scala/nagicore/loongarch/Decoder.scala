@@ -143,7 +143,7 @@ object DecoderMap{
     )
 }
 
-class Decoder extends Module with Config{
+class Decoder(XLEN: Int, GPR_LEN: Int) extends Module{
     val io = IO(new Bundle {
         val instr       = Input(UInt(XLEN.W))
 

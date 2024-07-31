@@ -2,7 +2,7 @@ package nagicore.bus
 
 import chisel3._
 import chisel3.util._
-import nagicore.unit.CacheMemType.Value
+import nagicore.unit.cache.CacheMemType.Value
 
 object RamType extends Enumeration {
     type RamType = Value

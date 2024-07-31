@@ -66,6 +66,7 @@ wire [31:0] io_isram_dout;
 wire [19:0] io_isram_addr;
 wire [31:0] io_isram_din;
 wire        io_isram_en;
+wire        io_isram_re;
 wire        io_isram_we;
 wire [3:0]  io_isram_wmask;
 
@@ -81,6 +82,7 @@ ram_wrapper iwrapper(
     .io_sram_addr   (io_isram_addr),
     .io_sram_din    (io_isram_din),
     .io_sram_en     (io_isram_en),
+    .io_sram_re     (io_isram_re),
     .io_sram_we     (io_isram_we),
     .io_sram_wmask  (io_isram_wmask)
 );
@@ -90,6 +92,7 @@ wire [19:0] io_dsram_addr;
 wire [31:0] io_dsram_din;
 wire        io_dsram_en;
 wire        io_dsram_we;
+wire        io_dsram_re;
 wire [3:0]  io_dsram_wmask;
 
 ram_wrapper dwrapper(
@@ -104,6 +107,7 @@ ram_wrapper dwrapper(
     .io_sram_addr   (io_dsram_addr),
     .io_sram_din    (io_dsram_din),
     .io_sram_en     (io_dsram_en),
+    .io_sram_re     (io_dsram_re),
     .io_sram_we     (io_dsram_we),
     .io_sram_wmask  (io_dsram_wmask)
 
@@ -158,11 +162,13 @@ CoreNSCSCC core(
     .io_isram_addr(io_isram_addr),
     .io_isram_din(io_isram_din),
     .io_isram_en(io_isram_en),
+    .io_isram_re(io_isram_re),
     .io_isram_we(io_isram_we),
     .io_isram_wmask(io_isram_wmask),
     .io_dsram_addr(io_dsram_addr),
     .io_dsram_din(io_dsram_din),
     .io_dsram_en(io_dsram_en),
+    .io_dsram_re(io_dsram_re),
     .io_dsram_we(io_dsram_we),
     .io_dsram_wmask(io_dsram_wmask),
 

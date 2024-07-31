@@ -72,9 +72,9 @@ class ALU(dataBits: Int) extends Module {
     io.sum := sum
     import ALU_OP._
 
-    val mulu_imp = if(GlobalConfg.SIM) MULU_IMP.synthesizer else MULU_IMP.xsArrayMul
+    // val mulu_imp = if(GlobalConfg.SIM) MULU_IMP.synthesizer_1cyc else MULU_IMP.xsArrayMul
 
-    val mulu = Module(new MULU(dataBits, mulu_imp))
+    val mulu = Module(new MULU(dataBits, MULU_IMP.xsArrayMul))
     mulu.io.a := io.a
     mulu.io.b := io.b
     mulu.io.op := io.op(1, 0)

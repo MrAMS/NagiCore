@@ -3,8 +3,8 @@ package nagicore.loongarch.nscscc2024
 import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
-import nagicore.loongarch.Config
-import nagicore.unit.{CachePiped, InstrsBuff, InstrsBuffCacheBundle}
+import nagicore.unit.{InstrsBuff, InstrsBuffCacheBundle}
+import nagicore.unit.cache.CachePiped
 import nagicore.loongarch.CtrlFlags
 import nagicore.GlobalConfg
 
@@ -52,11 +52,11 @@ class IF extends Module with Config{
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_PERF_PIPE
-        val perf_pipe_icache = Module(new DPIC_PERF_PIPE())
-        perf_pipe_icache.io.clk := clock
-        perf_pipe_icache.io.rst := reset
-        perf_pipe_icache.io.id := 0.U
-        perf_pipe_icache.io.invalid := !io.if2id.bits.valid
-        perf_pipe_icache.io.stall := instrs_buff.io.out.busy
+        val perf_pipe_if = Module(new DPIC_PERF_PIPE())
+        perf_pipe_if.io.clk := clock
+        perf_pipe_if.io.rst := reset
+        perf_pipe_if.io.id := 0.U
+        perf_pipe_if.io.invalid := !io.if2id.bits.valid
+        perf_pipe_if.io.stall := io.preif2if.stall
     }
 }

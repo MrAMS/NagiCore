@@ -1,4 +1,4 @@
-package nagicore.unit
+package nagicore.unit.cache
 
 import chisel3._
 import chisel3.util._
@@ -7,33 +7,6 @@ import nagicore.bus._
 import chisel3.util.random.LFSR
 import nagicore.utils.isPowerOf2
 import nagicore.GlobalConfg
-
-object CacheMemType extends Enumeration {
-    type CacheMemType = Value
-    val Reg, BlockRAM = Value
-}
-
-object CacheReplaceType extends Enumeration {
-    type CacheReplaceType = Value
-    val Random, LRU = Value
-}
-
-/**
-  * CacheRAM 第二个周期返回读内容的同步RAM
-  *
-  * @param width
-  * @param depth
-  * @param imp
-  */
-class CacheMem(width: Int, depth: Int, imp: CacheMemType.CacheMemType=CacheMemType.Reg) extends Module{
-    val io = IO(new RamIO(width, depth))
-    imp match {
-        case _ => {
-            val sram = Module(new Ram(width, depth))
-            sram.io <> io
-        }
-    }
-}
 
 class CachePipedIOFrontBits[T <: Bundle](addrBits: Int, dataBits: Int, pipedataT: () => T) extends Bundle{
     val valid     = Bool()
@@ -259,10 +232,11 @@ class CachePiped[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int
     hit := hits.reduceTree(_||_) && !preg2.uncache
 
     if(GlobalConfg.SIM){
+        import  nagicore.unit.DPIC_PERF_CACHE
         val dpic_perf_cache = Module(new DPIC_PERF_CACHE)
         dpic_perf_cache.io.clk := clock
         dpic_perf_cache.io.rst := reset
-        dpic_perf_cache.io.valid := pipego && preg2.valid
+        dpic_perf_cache.io.valid := preg2.valid && state_s2 === Stage2State.lookup && !io.master.back.stall
         dpic_perf_cache.io.id := id.U
         dpic_perf_cache.io.access_type := Cat(preg2.uncache, hit)
     }
