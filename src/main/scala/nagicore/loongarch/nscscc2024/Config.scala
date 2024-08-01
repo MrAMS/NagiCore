@@ -17,8 +17,8 @@ trait Config{
     def INSTRS_BUFF_SIZE = 8
 
     def DCACHE_WAYS = 2
-    def DCACHE_LINES = 128
-    def DCACHE_WORDS = 4
+    def DCACHE_LINES = 128*4
+    def DCACHE_WORDS = 1
     def DCACHE_WBUFF_LEN = 8
 
     def AXI4IDBITS = 4

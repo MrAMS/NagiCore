@@ -7,6 +7,7 @@ import nagicore.bus.AXI4IO
 import nagicore.unit.cache.Cache
 import nagicore.loongarch.CtrlFlags
 import nagicore.GlobalConfg
+import nagicore.unit.cache.CacheReplaceType
 
 class if2idBits extends Bundle with Config{
     val pc          = UInt(XLEN.W)
@@ -28,7 +29,7 @@ class IF extends Module with Config{
         val isram = new AXI4IO(XLEN, XLEN)
     })
     // 2-stages cache
-    val icache = Module(new Cache(XLEN, XLEN, ICACHE_WAYS, ICACHE_LINES, ICACHE_WORDS, () => new preif2ifBits(), debug_id = 0))
+    val icache = Module(new Cache(XLEN, XLEN, ICACHE_WAYS, ICACHE_LINES, ICACHE_WORDS, () => new preif2ifBits(), CacheReplaceType.LRU, debug_id = 0))
     icache.io.axi <> io.isram
 
     icache.io.master.front.bits.addr := io.preif2if.bits.pc
