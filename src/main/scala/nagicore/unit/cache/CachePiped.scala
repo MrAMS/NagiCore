@@ -48,7 +48,7 @@ class CachePipedIO[T <: Bundle](addrBits: Int, dataBits: Int, blockWords: Int, p
 }
 
 /**
-  * 阻塞式两级流水线Cache
+  * 阻塞式两级流水线Cache（已弃用）
   * @pipeline
   *                   stage1             stage2
   * EX                -> MEM1            -> MEM2           -> WB

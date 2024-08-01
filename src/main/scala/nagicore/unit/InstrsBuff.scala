@@ -137,11 +137,13 @@ class InstrsBuff(addrBits:Int, dataBits: Int, cacheBlockWords: Int, blockLen: In
     io.cache.back.stall := full
 
     if(GlobalConfg.SIM){
-        val dpic_perf_instrs_buff = Module(new DPIC_PERF_INSTRS_BUFF)
+        val dpic_perf_instrs_buff = Module(new DPIC_PERF_BUFF)
         dpic_perf_instrs_buff.io.clk := clock
         dpic_perf_instrs_buff.io.rst := reset
+        dpic_perf_instrs_buff.io.id := 0.U
         dpic_perf_instrs_buff.io.head := buff_head
         dpic_perf_instrs_buff.io.tail := buff_tail
+        dpic_perf_instrs_buff.io.full := full
         dpic_perf_instrs_buff.io.reload := io.in.new_trans
     }
 }

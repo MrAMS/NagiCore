@@ -373,7 +373,6 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
         wid := io.axi.aw.bits.id
         wlen := io.axi.aw.bits.len
         ws := ws_w
-        assert(io.axi.w.valid)
     }
     when(io.axi.w.fire){
         waddr := waddr + (dataBits/8).U

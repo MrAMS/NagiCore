@@ -111,14 +111,16 @@ class DPIC_PERF_PIPE extends BlackBox with HasBlackBoxResource{
     addResource("/sv/DPIC_PERF_PIPE.sv")
 }
 
-class DPIC_PERF_INSTRS_BUFF extends BlackBox with HasBlackBoxResource{
+class DPIC_PERF_BUFF extends BlackBox with HasBlackBoxResource{
     val io = IO(new Bundle{
         val clk     = Input(Clock())
         val rst     = Input(Bool())
+        val id      = Input(UInt(8.W))
         val head    = Input(UInt(8.W))
         val tail    = Input(UInt(8.W))
+        val full    = Input(UInt(8.W))
         val reload  = Input(UInt(8.W))
     })
     addResource("/sv/DPIC_TYPES_DEFINE.sv")
-    addResource("/sv/DPIC_PERF_INSTRS_BUFF.sv")
+    addResource("/sv/DPIC_PERF_BUFF.sv")
 }

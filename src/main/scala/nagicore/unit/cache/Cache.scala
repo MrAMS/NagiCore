@@ -58,9 +58,10 @@ class CacheIO[T <: Bundle](addrBits: Int, dataBits: Int, blockWords: Int, pipeda
   * @param blockWords   块字个数
   * @param pipedataT    流水线其他信号
   */
-class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int, id: Int=0,
+class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int,
                          pipedataT: () => T,
-                         replaceT: CacheReplaceType.CacheReplaceType=CacheReplaceType.Random) extends Module{
+                         replaceT: CacheReplaceType.CacheReplaceType=CacheReplaceType.Random,
+                         debug_id: Int=0) extends Module{
     require(isPowerOf2(ways))
     require(isPowerOf2(dataBits))
 
@@ -171,9 +172,8 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
     val rdirty = RegEnable(tabulate(ways){ i =>
             dirty_io(i).dout.asBool
         }, pipego_reg)
-
-    pipego :=
-        (
+    
+    val cache_ready = (
         // 连续命中
         (state === StageState.lookup && hit) ||
         // 无效命令
@@ -182,7 +182,8 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
         state === StageState.replaceEnd ||
         // uncache访问
         state === StageState.uncacheEnd
-        ) &&
+    )
+    pipego := cache_ready &&
         // 下一级无阻塞请求
         !io.master.back.stall
 
@@ -197,7 +198,7 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
     val rdata_uncache = RegInit(0.U(dataBits.W))
 
     io.master.front.stall := !pipego
-    io.master.back.bits.valid := pipego && preg.valid
+    io.master.back.bits.valid := cache_ready && preg.valid
 //    io.master.back.bits.rdata := Mux(state_s2 === Stage2State.replaceEnd, rdata_replace, rdata_hit)
     io.master.back.bits.rdata := MuxCase(rdatas_hit(addr_word_reg), Seq(
         (state === StageState.replaceEnd) -> rdatas_replace(addr_word_reg),
@@ -226,7 +227,7 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
         dpic_perf_cache.io.clk := clock
         dpic_perf_cache.io.rst := reset
         dpic_perf_cache.io.valid := preg.valid && state === StageState.lookup && !io.master.back.stall
-        dpic_perf_cache.io.id := id.U
+        dpic_perf_cache.io.id := debug_id.U
         dpic_perf_cache.io.access_type := Cat(preg.uncache, hit)
     }
 

@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
 import nagicore.loongarch.CtrlFlags
-import nagicore.unit.cache.CachePiped
+import nagicore.unit.cache.CacheWT
 import nagicore.utils.Flags
 import nagicore.GlobalConfg
 import nagicore.unit.cache.UnCache
@@ -40,29 +40,43 @@ class MEM extends Module with Config{
         val dmem = new AXI4IO(XLEN, XLEN)
     })
 
-    val dcache = Module(new UnCache(XLEN, XLEN, 8))
+    class dcachePipeT extends Bundle {
+        val instr       = UInt(XLEN.W)
+        val alu_out     = UInt(XLEN.W)
+        val rc          = UInt(GPR_LEN.W)
+        val ld_type     = CtrlFlags.ldType()
+        val pc          = UInt(XLEN.W)
+        val no_ldst     = Bool()
 
-    // pipeline registers
-    val preg = RegEnable(io.ex2mem.bits, !dcache.io.out.busy && !io.mem2wb.stall)
-    io.ex2mem.stall := dcache.io.out.busy || io.mem2wb.stall
+        val valid       = Bool()
+    }
+
+    val dcache = Module(new CacheWT(XLEN, XLEN, DCACHE_WAYS, DCACHE_LINES, DCACHE_WORDS, DCACHE_WBUFF_LEN, ()=> new dcachePipeT, debug_id=1))
+
+    io.ex2mem.stall := dcache.io.cmd.front.stall || io.mem2wb.stall
 
     dcache.io.axi <> io.dmem
 
-    val addr = preg.alu_out
 
-    dcache.io.in.bits.addr := addr
-    dcache.io.in.bits.wdata := Flags.onehotMux(preg.st_type, Seq(
+    val ex_out = io.ex2mem.bits
+    val addr = ex_out.alu_out
+
+    dcache.io.cmd.front.bits.addr := addr
+    dcache.io.cmd.front.bits.uncache := (addr(31, 28) === "hb".U)
+    // dcache.io.cmd.front.bits.uncache := true.B
+    dcache.io.cmd.front.bits.we := ex_out.st_type =/= Flags.bp(CtrlFlags.stType.x)
+    dcache.io.cmd.front.bits.wdata := Flags.onehotMux(ex_out.st_type, Seq(
         CtrlFlags.stType.x  -> 0.U,
-        CtrlFlags.stType.b  -> Fill(XLEN/8, preg.rb_val(7, 0)),
-        CtrlFlags.stType.h  -> Fill(XLEN/16, preg.rb_val(15, 0)),
-        CtrlFlags.stType.w  -> preg.rb_val(31, 0),
+        CtrlFlags.stType.b  -> Fill(XLEN/8, ex_out.rb_val(7, 0)),
+        CtrlFlags.stType.h  -> Fill(XLEN/16, ex_out.rb_val(15, 0)),
+        CtrlFlags.stType.w  -> ex_out.rb_val(31, 0),
     ))
-    dcache.io.in.bits.size := Flags.onehotMux(preg.st_type, Seq(
+    dcache.io.cmd.front.bits.size := Flags.onehotMux(ex_out.st_type, Seq(
         CtrlFlags.stType.x  -> 0.U,
         CtrlFlags.stType.b  -> 0.U,
         CtrlFlags.stType.h  -> 1.U,
         CtrlFlags.stType.w  -> 2.U,
-    )) | Flags.onehotMux(preg.ld_type, Seq(
+    )) | Flags.onehotMux(ex_out.ld_type, Seq(
         CtrlFlags.ldType.x  -> 0.U,
         CtrlFlags.ldType.b  -> 0.U,
         CtrlFlags.ldType.bu -> 0.U,
@@ -70,26 +84,38 @@ class MEM extends Module with Config{
         CtrlFlags.ldType.hu -> 1.U,
         CtrlFlags.ldType.w  -> 2.U,
     ))
-    dcache.io.in.bits.wmask := Flags.onehotMux(preg.st_type, Seq(
+    dcache.io.cmd.front.bits.wmask := Flags.onehotMux(ex_out.st_type, Seq(
         CtrlFlags.stType.x  -> 0.U,
         CtrlFlags.stType.b  -> ("b1".U<<addr(1, 0)),
         CtrlFlags.stType.h  -> ("b11".U<<(addr(1)##0.U(1.W))),
         CtrlFlags.stType.w  -> "b1111".U,
     ))
     // 不走Cache的指令
-    val nolr = (preg.ld_type === Flags.bp(CtrlFlags.ldType.x) && preg.st_type === Flags.bp(CtrlFlags.stType.x))
-    dcache.io.in.req := preg.valid && !nolr && RegNext(!dcache.io.out.busy) && !io.mem2wb.stall
+    val no_ldst = (ex_out.ld_type === Flags.bp(CtrlFlags.ldType.x) && ex_out.st_type === Flags.bp(CtrlFlags.stType.x))
+    dcache.io.cmd.front.bits.valid := !no_ldst && ex_out.valid
 
-    io.mem2wb.bits.alu_out := preg.alu_out
-    io.mem2wb.bits.instr := preg.instr
-    io.mem2wb.bits.ld_type := preg.ld_type
-    io.mem2wb.bits.pc := preg.pc
-    io.mem2wb.bits.rc := preg.rc
-    io.mem2wb.bits.rdata := dcache.io.out.rdata
-    io.mem2wb.bits.valid := preg.valid && !dcache.io.out.busy
+    dcache.io.cmd.front.bits.pipedata.alu_out := ex_out.alu_out
+    dcache.io.cmd.front.bits.pipedata.instr := ex_out.instr
+    dcache.io.cmd.front.bits.pipedata.ld_type := ex_out.ld_type
+    dcache.io.cmd.front.bits.pipedata.no_ldst := no_ldst
+    dcache.io.cmd.front.bits.pipedata.pc := ex_out.pc
+    dcache.io.cmd.front.bits.pipedata.rc := ex_out.rc
+    dcache.io.cmd.front.bits.pipedata.valid := ex_out.valid
 
-    io.mem2id.bypass_rc := Mux(preg.valid, preg.rc, 0.U)
-    io.mem2id.bypass_val := preg.alu_out
+    dcache.io.cmd.back.stall := io.mem2wb.stall
+
+    io.mem2wb.bits.alu_out := dcache.io.cmd.back.bits.pipedata.alu_out
+    io.mem2wb.bits.instr := dcache.io.cmd.back.bits.pipedata.instr
+    io.mem2wb.bits.ld_type := dcache.io.cmd.back.bits.pipedata.ld_type
+    io.mem2wb.bits.pc := dcache.io.cmd.back.bits.pipedata.pc
+    io.mem2wb.bits.rc := dcache.io.cmd.back.bits.pipedata.rc
+    io.mem2wb.bits.rdata := dcache.io.cmd.back.bits.rdata
+    io.mem2wb.bits.valid := dcache.io.cmd.back.bits.pipedata.valid && 
+        // 不走Cache的指令不需要关心Cache的valid输出
+        Mux(dcache.io.cmd.back.bits.pipedata.no_ldst, true.B, dcache.io.cmd.back.bits.valid)
+
+    io.mem2id.bypass_rc := Mux(dcache.io.cmd.back.bits.pipedata.valid, dcache.io.cmd.back.bits.pipedata.rc, 0.U)
+    io.mem2id.bypass_val := dcache.io.cmd.back.bits.pipedata.alu_out
 
     // when(nolr){
     //     io.mem2id.bypass_rc := Mux(preg.valid, preg.rc, 0.U)
@@ -104,11 +130,11 @@ class MEM extends Module with Config{
         val dpic_trace_mem_w = Module(new DPIC_TRACE_MEM(XLEN, XLEN))
         dpic_trace_mem_w.io.clk := clock
         dpic_trace_mem_w.io.rst := reset
-        dpic_trace_mem_w.io.valid := dcache.io.in.req && dcache.io.in.bits.wmask.orR
-        dpic_trace_mem_w.io.addr := dcache.io.in.bits.addr
-        dpic_trace_mem_w.io.size := dcache.io.in.bits.size
-        dpic_trace_mem_w.io.data := dcache.io.in.bits.wdata
-        dpic_trace_mem_w.io.wmask := dcache.io.in.bits.wmask
+        dpic_trace_mem_w.io.valid := dcache.io.cmd.back.bits.valid && dcache.io.cmd.back.bits.wmask.orR
+        dpic_trace_mem_w.io.addr := dcache.io.cmd.back.bits.addr
+        dpic_trace_mem_w.io.size := dcache.io.cmd.back.bits.size
+        dpic_trace_mem_w.io.data := dcache.io.cmd.back.bits.wdata
+        dpic_trace_mem_w.io.wmask := dcache.io.cmd.back.bits.wmask
 
         import nagicore.unit.DPIC_PERF_PIPE
         val perf_pipe_dcache = Module(new DPIC_PERF_PIPE())
