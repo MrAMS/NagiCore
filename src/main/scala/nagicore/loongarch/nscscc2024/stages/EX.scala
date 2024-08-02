@@ -14,6 +14,7 @@ import nagicore.unit.BP_TYPE
 class ex2preifIO extends Bundle with Config{
     val bpu_update  = new BTBUpdateIO(BTB_ENTRYS, XLEN)
     val bpu_fail    = Bool()
+    val br_real_pc  = UInt(XLEN.W)
 }
 
 class ex2idIO extends Bundle with Config{
@@ -82,16 +83,17 @@ class EX extends Module with Config{
         bru.io.br_take) && valid_instr
     
     io.ex2preif.bpu_fail := br_pred_fail
+    io.ex2preif.br_real_pc := Mux(bru.io.br_take, br_pc, preg.pc+4.U)
 
-    io.ex2preif.bpu_update.bp_type := Mux(Flags.OHis(preg.br_type, BR_TYPE.ALWAYS),
+    io.ex2preif.bpu_update.bp_type := RegNext(Mux(Flags.OHis(preg.br_type, BR_TYPE.ALWAYS),
         Flags.U(BP_TYPE.jump), Flags.U(BP_TYPE.cond)
-    )
-    io.ex2preif.bpu_update.hit := preg.bpu_out.hit
-    io.ex2preif.bpu_update.index := preg.bpu_out.index
-    io.ex2preif.bpu_update.pc := preg.pc
-    io.ex2preif.bpu_update.target := Mux(bru.io.br_take, br_pc, preg.pc+4.U)
-    io.ex2preif.bpu_update.taken := bru.io.br_take
-    io.ex2preif.bpu_update.valid := valid_instr && !Flags.OHis(preg.br_type, BR_TYPE.NEVER)
+    ))
+    io.ex2preif.bpu_update.hit := RegNext(preg.bpu_out.hit)
+    io.ex2preif.bpu_update.index := RegNext(preg.bpu_out.index)
+    io.ex2preif.bpu_update.pc := RegNext(preg.pc)
+    io.ex2preif.bpu_update.target := RegNext(io.ex2preif.br_real_pc)
+    io.ex2preif.bpu_update.taken := RegNext(bru.io.br_take)
+    io.ex2preif.bpu_update.valid := RegNext(valid_instr && !Flags.OHis(preg.br_type, BR_TYPE.NEVER))
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_PERF_BRU

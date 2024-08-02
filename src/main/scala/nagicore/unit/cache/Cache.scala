@@ -116,29 +116,29 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
     // 流水使能信号
     val pipego = Wire(Bool())
 
-    tag_v_io.foreach(io => {
+    tag_v_io.map(io => {
         io.addr := addr_idx
         io.en := pipego
         io.re := true.B
         io.we := false.B
         io.din := 0.U
-        io.wmask := Fill(len_tag+1, true.B)
+        io.wmask := DontCare
     })
-    data_bank_io.foreach(_.foreach(io => {
+    data_bank_io.map(_.map(io => {
         io.addr := addr_idx
         io.en := pipego
         io.re := true.B
         io.we := false.B
         io.din := 0.U
-        io.wmask := Fill(dataBits, true.B)
+        io.wmask := DontCare
     }))
-    dirty_io.foreach(io => {
+    dirty_io.map(io => {
         io.addr := addr_idx
         io.en := pipego
         io.re := true.B
         io.we := false.B
         io.din := 0.U
-        io.wmask := Fill(1, true.B)
+        io.wmask := DontCare
     })
 
 
@@ -247,6 +247,8 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
         io.re := false.B
         io.we := true.B
         io.din := data
+        if(io.wmask.getWidth == 0) io.wmask := "b1".U
+        else io.wmask := Fill(io.wmask.getWidth, "b1".U)
     }
 
     def wait_uncache_ready() = {
@@ -299,7 +301,7 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
                         bypass_valid(addr_word_reg) := true.B
                         bypass_val(addr_word_reg) := wdata
                         writeSyncRam(dirty_io(hit_way), addr_idx_reg, 1.U(1.W))
-                    }otherwise{
+                    }.otherwise{
                         // 命中读
                         rdatas_hit := rdatas_real
                     }

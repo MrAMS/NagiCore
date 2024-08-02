@@ -93,7 +93,7 @@ class AXI4WriteAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int
 
     val state = RegInit(State.idle)
     val axi_aw_count = RegInit(0.U(1.W))
-    val axi_w_count = RegInit(0.U(log2Up(maxBeatsLen+1).W))
+    val axi_w_count = RegInit(0.U(log2Up(maxBeatsLen).W))
     val cmd_buf = Reg(chiselTypeOf(io.cmd.in))
 
     io.cmd.out.ready := state === State.idle
@@ -110,8 +110,8 @@ class AXI4WriteAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int
     io.axi.aw.bits.burst := 1.U
 
     io.axi.w.valid := false.B
-    io.axi.w.bits.data := cmd_buf.wdata(axi_w_count)
-    io.axi.w.bits.strb := cmd_buf.wmask(axi_w_count)
+    io.axi.w.bits.data := cmd_buf.wdata(if(maxBeatsLen==1) 0.U else axi_w_count)
+    io.axi.w.bits.strb := cmd_buf.wmask(if(maxBeatsLen==1) 0.U else axi_w_count)
     io.axi.w.bits.last := axi_w_count === cmd_buf.len
 
     io.axi.b.ready := false.B
@@ -178,7 +178,7 @@ class AXI4ReadAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int=
         val idle, ar, r = Value
     }
     val state = RegInit(State.idle)
-    val axi_r_count = RegInit(0.U(log2Up(maxBeatsLen+1).W))
+    val axi_r_count = RegInit(0.U(log2Up(maxBeatsLen).W))
     val cmd_buf = Reg(chiselTypeOf(io.cmd.in))
 
 

@@ -88,6 +88,7 @@ class Ram(width: Int, depth: Long, imp: RamType.RamType=RamType.RAM_2CYC) extend
                         val wdata = VecInit.tabulate(bytes){
                             i => io.din(8*((bytes-1-i)+1)-1, 8*(bytes-1-i))
                         }
+                        assert(Cat(io.wmask.asBools)===io.wmask)
                         mem.write(io.addr, wdata, io.wmask.asBools)
                     }
                     // WRITE_FIRST Mode

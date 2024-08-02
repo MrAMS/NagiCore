@@ -24,14 +24,11 @@ trait base extends SbtModule { m =>
     override def scalacPluginIvyDeps = Agg(
         ivy"org.chipsalliance:::chisel-plugin:5.1.0",
     )
+    // object test extends SbtModuleTests with TestModule.ScalaTest {
+    //     override def ivyDeps = m.ivyDeps() ++ Agg(
+    //         ivy"org.scalatest::scalatest::3.2.16"
+    //     )
+    // }
 }
 
-trait testable extends SbtModule { m =>
-    object test extends SbtModuleTests with TestModule.ScalaTest {
-        override def ivyDeps = m.ivyDeps() ++ Agg(
-            ivy"edu.berkeley.cs::chiseltest:5.0.2"
-        )
-    }
-}
-
-object nagicore extends base with testable
+object nagicore extends base

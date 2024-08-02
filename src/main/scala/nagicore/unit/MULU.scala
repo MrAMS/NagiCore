@@ -7,7 +7,7 @@ import nagicore.GlobalConfg
 
 object MULU_IMP extends Enumeration {
     type MULU_IMP = Value
-    val synthesizer_1cyc, oneBitShift, xsArrayMul = Value
+    val synthesizer_1cyc, oneBitShift, xsArrayMul, MultiplierIP, synthesizer_DSP = Value
 }
 
 object MULU_OP{
@@ -35,16 +35,23 @@ class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer_1cyc
         val vaild = Input(Bool())
         val busy = Output(Bool())
     })
-    imp_way match {
-        case MULU_IMP.xsArrayMul => {
-            if(GlobalConfg.SIM){
+    if(GlobalConfg.SIM){
+        imp_way match {
+            case MULU_IMP.xsArrayMul | MULU_IMP.MultiplierIP => {
                 io.busy := io.vaild || RegNext(io.vaild)
-                io.out := Flags.CasesMux(io.op, Seq(
-                    MULU_OP.MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
-                    MULU_OP.MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
-                    MULU_OP.MULHU   -> (io.a * io.b)(63, 32),
-                ), 0.U)
-            }else{
+            }
+            case _ => {
+                io.busy := false.B
+            }
+        }
+        io.out := Flags.CasesMux(io.op, Seq(
+            MULU_OP.MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
+            MULU_OP.MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
+            MULU_OP.MULHU   -> (io.a * io.b)(63, 32),
+        ), 0.U)
+    }else{
+        imp_way match {
+            case MULU_IMP.xsArrayMul => {
                 import nagicore.unit.ip.Xiangshan.ArrayMulDataModule
                 val arrayMul = Module(new ArrayMulDataModule(dataBits+1))
                 arrayMul.io.a := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.a(dataBits-1)) ## io.a
@@ -61,17 +68,57 @@ class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer_1cyc
                 ), 0.U)
                 io.busy := io.vaild || valid_reg1
             }
-            // io.busy := io.vaild || valid_reg1 || RegNext(valid_reg1)
-        }
-        case _ => {
-            io.busy := false.B
-            io.out := Flags.CasesMux(io.op, Seq(
-                MULU_OP.MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
-                MULU_OP.MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
-                MULU_OP.MULHU   -> (io.a * io.b)(63, 32),
-            ), 0.U)
+            case MULU_IMP.synthesizer_DSP => {
+                def DSPInPipe[T <: Data](a: T) = RegNext(a)
+                def DSPOutPipe[T <: Data](a: T) = RegNext(a)
+                val a = Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.a(dataBits-1)) ## io.a
+                val b = Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.b(dataBits-1)) ## io.b
+                val res = DSPOutPipe(DSPInPipe(a) * DSPInPipe(b))
+                io.out := Flags.CasesMux(io.op, Seq(
+                    MULU_OP.MUL     -> res(31, 0),
+                    MULU_OP.MULH    -> SignExt(res(63, 32), dataBits),
+                    MULU_OP.MULHU   -> res(63, 32),
+                ), 0.U)
+                val busy = RegInit(false.B)
+                when(io.vaild && !busy){ busy := true.B }
+                val ready = DSPOutPipe(DSPInPipe(io.vaild))
+                when(ready){ busy := false.B }
+                io.busy := busy
+            }
+            case MULU_IMP.MultiplierIP => {
+                Predef.println(s"Xilinx Multiplier IP mult_${dataBits+1}_unsigned_2stages needed")
+                class MultiplierIP extends BlackBox{
+                    override val desiredName = s"mult_${dataBits+1}_unsigned_2stages"
+                    val io = IO(new Bundle {
+                        val CLK     = Input(Clock())
+                        val A       = Input(UInt((dataBits+1).W))
+                        val B       = Input(UInt((dataBits+1).W))
+                        val P       = Output(UInt(((dataBits+1)*2).W))
+                    })
+                }
+                val ip = Module(new MultiplierIP)
+                ip.io.CLK := clock
+                ip.io.A := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.a(dataBits-1)) ## io.a
+                ip.io.B := Flags.ifEqu(io.op, MULU_OP.MULHU, 0.U(1.W), io.b(dataBits-1)) ## io.b
+                val res = ip.io.P
+                io.out := Flags.CasesMux(io.op, Seq(
+                    MULU_OP.MUL     -> res(31, 0),
+                    MULU_OP.MULH    -> SignExt(res(63, 32), dataBits),
+                    MULU_OP.MULHU   -> res(63, 32),
+                ), 0.U)
+                io.busy := io.vaild || RegNext(io.vaild) || RegNext(RegNext(io.vaild))
+            }
+            case _ => {
+                io.busy := false.B
+                io.out := Flags.CasesMux(io.op, Seq(
+                    MULU_OP.MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
+                    MULU_OP.MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
+                    MULU_OP.MULHU   -> (io.a * io.b)(63, 32),
+                ), 0.U)
+            }
         }
     }
+
     // if(imp_way == MULU_IMP.synthesizer){
 
     // }else{

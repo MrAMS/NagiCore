@@ -105,8 +105,10 @@ class BTB(entryNum: Int, pcBits: Int, tagBits: Int, scInit: Int=0, instrBytes: I
             when(io.update.hit){
                 val sc = table(io.update.index).sc
                 table(io.update.index).sc := Mux(io.update.taken,
-                    Mux(sc===3.U, 3.U, sc + 1.U),
-                    Mux(sc===0.U, 0.U, sc - 1.U)
+                    // 11 -> 11, 00 -> 01, 01 -> 10, 10 -> 11
+                    Mux(sc===3.U, 3.U, Cat(sc(1)|sc(0), ~sc(0))),
+                    // 00 -> 00, 01 -> 00, 10 -> 01, 11 -> 10
+                    Mux(sc===0.U, 0.U, Cat(sc(1)&sc(0), ~sc(0)))
                 )
                 table(io.update.index).target := io.update.target
             }.otherwise{

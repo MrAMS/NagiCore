@@ -120,7 +120,7 @@ class ALU(dataBits: Int) extends Module {
         DIVU    -> divu.io.quo,
         MOD     -> divu.io.rem,
         MODU    -> divu.io.rem,
-        // for test
+
         // MUL     -> (io.a.asSInt * io.b.asSInt)(31, 0).asUInt,
         // MULH    -> (io.a.asSInt * io.b.asSInt)(63, 32).asUInt,
         // MULHU   -> (io.a * io.b)(63, 32),
