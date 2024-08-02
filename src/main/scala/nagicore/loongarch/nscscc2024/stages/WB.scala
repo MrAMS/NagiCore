@@ -1,10 +1,10 @@
-package nagicore.loongarch.nscscc2024
+package nagicore.loongarch.nscscc2024.stages
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.CtrlFlags
 import nagicore.utils.Flags
 import nagicore.GlobalConfg
+import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
 
 class wb2idIO extends Bundle with Config{
     val wb_data     = Output(UInt(XLEN.W))

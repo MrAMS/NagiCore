@@ -2,7 +2,7 @@ package nagicore.unit
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.CtrlFlags.ldType.bu
+import nagicore.loongarch.nscscc2024.CtrlFlags.ldType.bu
 import nagicore.GlobalConfg
 import cache.CachePipedIO
 

@@ -1,4 +1,4 @@
-package nagicore.loongarch
+package nagicore.loongarch.nscscc2024
 
 import chisel3._
 import chisel3.util._

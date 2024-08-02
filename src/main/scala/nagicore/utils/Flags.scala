@@ -6,19 +6,26 @@ import chisel3.util.experimental.decode._
 
 object Flags{
     def bp(x : String) : BitPat = BitPat(s"b${x}")
+    def U(x: String):UInt = s"b$x".U
     def castFlags2Bitpat(x : Iterable[String]) : BitPat = BitPat(s"b${x.reduce(_ ++ _)}")
     def onehotMux[T <: Data](input: UInt, cases: Iterable[(String, T)]) = {
-        def findFirstOne(str: String): Option[Int] = {
-            str.indexOf("1") match {
-                case -1 => None
-                case index => Some(index)
-            }
-        }
         // check one-hot
         assert(cases.map(x => x._1.count(_ == '1')==1).reduce(_ && _))
         // check no duplicate
         assert(cases.map(x=>x._1).toSet.size == cases.size)
         chisel3.util.Mux1H(cases.map(x => input(x._1.length-1 - findFirstOne(x._1).get) -> x._2))
+    }
+    /**
+      * One-hot Flag Check
+      *
+      * @param input
+      * @param expect
+      * @return
+      */
+    def OHis[T <: Data](input: UInt, expect: String): Bool = {
+        // check one-hot
+        assert(expect.count(_ == '1')==1)
+        input(expect.length-1-findFirstOne(expect).get).asBool
     }
     def CasesMux[T <: Data](input: UInt, cases: Iterable[(String, T)], default: T) : T = {
         // check no duplicate
@@ -47,5 +54,11 @@ object Flags{
             decode_map.map(x=> x._1 -> BitPat(s"b${x._2.get(flag_name).get}")),
             BitPat(s"b${default_map.get(flag_name).get}")
         ))
+    }
+    private def findFirstOne(str: String): Option[Int] = {
+        str.indexOf("1") match {
+            case -1 => None
+            case index => Some(index)
+        }
     }
 }

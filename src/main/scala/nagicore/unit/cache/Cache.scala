@@ -275,7 +275,7 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
         is(StageState.lookup){
             when(preg.valid){
                 when(hit){
-                    val hit_way = PriorityEncoder(hits)
+                    val hit_way = OHToUInt(hits)
                     if(replaceT == CacheReplaceType.LRU){
                         lru(addr_idx_reg) := ~hit_way
                     }

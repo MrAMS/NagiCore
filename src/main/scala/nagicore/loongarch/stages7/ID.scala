@@ -2,9 +2,9 @@ package nagicore.loongarch.stages7
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.Decoder
+import nagicore.loongarch.nscscc2024.Decoder
 import nagicore.unit.GPR
-import nagicore.loongarch.CtrlFlags
+import nagicore.loongarch.nscscc2024.CtrlFlags
 import nagicore.unit.ALU_OP
 import nagicore.unit.BR_TYPE
 

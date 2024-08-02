@@ -1,12 +1,13 @@
-package nagicore.loongarch.nscscc2024
+package nagicore.loongarch.nscscc2024.stages
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.Decoder
 import nagicore.unit.GPR
-import nagicore.loongarch.CtrlFlags
 import nagicore.unit.ALU_OP
 import nagicore.unit.BR_TYPE
+import nagicore.unit.BTBPredOutIO
+import nagicore.loongarch.nscscc2024.{Config, CtrlFlags, Decoder}
+
 
 class id2exBits extends Bundle with Config{
     val instr       = UInt(XLEN.W)
@@ -22,6 +23,7 @@ class id2exBits extends Bundle with Config{
     val brpcAdd_sel = CtrlFlags.brpcAddSel()
     val ld_type     = CtrlFlags.ldType()
     val st_type     = CtrlFlags.stType()
+    val bpu_out     = new BTBPredOutIO(BTB_ENTRYS, XLEN)
 
     val valid       = Bool()
 }
@@ -100,5 +102,7 @@ class ID extends Module with Config{
     io.id2ex.bits.ld_type := decoder.io.ld_type
 
     io.id2ex.bits.st_type := decoder.io.st_type
+
+    io.id2ex.bits.bpu_out := preg.bpu_out
 
 }

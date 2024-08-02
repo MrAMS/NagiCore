@@ -1,17 +1,19 @@
-package nagicore.loongarch.nscscc2024
+package nagicore.loongarch.nscscc2024.stages
 
 import chisel3._
 import chisel3.util._
 import nagicore.utils.Flags
-import nagicore.loongarch.CtrlFlags
 import nagicore.unit.ALU
 import nagicore.unit.BRU_SINGLE
 import nagicore.GlobalConfg
+import nagicore.unit.BTBUpdateIO
+import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
+import nagicore.unit.BR_TYPE
+import nagicore.unit.BP_TYPE
 
 class ex2preifIO extends Bundle with Config{
-    val br_pc       = Output(UInt(XLEN.W))
-    // effective signal
-    val br_take     = Output(Bool())
+    val bpu_update  = new BTBUpdateIO(BTB_ENTRYS, XLEN)
+    val bpu_fail    = Bool()
 }
 
 class ex2idIO extends Bundle with Config{
@@ -61,7 +63,7 @@ class EX extends Module with Config{
     val stall_pre_counter = RegInit(0.U(2.W))
 
     val valid_instr = kill_nxt === 0.U && preg.valid && !busy && stall_pre_counter === 0.U
-    val is_ld : Bool = valid_instr && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
+    val is_ld : Bool = valid_instr && !Flags.OHis(preg.ld_type, CtrlFlags.ldType.x)
     accp_pre := !(stall_nxt || busy)
 
     // must stall when ld comes immediately unlike kill
@@ -72,8 +74,24 @@ class EX extends Module with Config{
     bru.io.b := preg.rb_val
     bru.io.br_type := preg.br_type
 
-    val br_pred_fail : Bool = bru.io.br_take && valid_instr
-    io.ex2preif.br_take := br_pred_fail
+    val br_pc = preg.imm + Mux(Flags.OHis(preg.brpcAdd_sel, CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
+
+    // valid_instr && bru.io.br_take
+
+    val br_pred_fail = Mux(preg.bpu_out.taken, !bru.io.br_take || preg.bpu_out.target =/= br_pc,
+        bru.io.br_take) && valid_instr
+    
+    io.ex2preif.bpu_fail := br_pred_fail
+
+    io.ex2preif.bpu_update.bp_type := Mux(Flags.OHis(preg.br_type, BR_TYPE.ALWAYS),
+        Flags.U(BP_TYPE.jump), Flags.U(BP_TYPE.cond)
+    )
+    io.ex2preif.bpu_update.hit := preg.bpu_out.hit
+    io.ex2preif.bpu_update.index := preg.bpu_out.index
+    io.ex2preif.bpu_update.pc := preg.pc
+    io.ex2preif.bpu_update.target := Mux(bru.io.br_take, br_pc, preg.pc+4.U)
+    io.ex2preif.bpu_update.taken := bru.io.br_take
+    io.ex2preif.bpu_update.valid := valid_instr && !Flags.OHis(preg.br_type, BR_TYPE.NEVER)
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_PERF_BRU
@@ -81,7 +99,7 @@ class EX extends Module with Config{
         val dpic_perf_bru = Module(new DPIC_PERF_BRU)
         dpic_perf_bru.io.clk := clock
         dpic_perf_bru.io.rst := reset
-        dpic_perf_bru.io.valid := preg.br_type =/= Flags.bp(BR_TYPE.NEVER) && valid_instr
+        dpic_perf_bru.io.valid := !Flags.OHis(preg.br_type, BR_TYPE.NEVER) && valid_instr
         dpic_perf_bru.io.fail := br_pred_fail
     }
 
@@ -116,7 +134,6 @@ class EX extends Module with Config{
     //                         )
     //                     ), stall_pre_counter)
 
-    io.ex2preif.br_pc := preg.imm + Mux(preg.brpcAdd_sel === Flags.bp(CtrlFlags.brpcAddSel.ra_val), preg.ra_val, preg.pc)
 
     io.ex2mem.bits.instr := preg.instr
 

@@ -1,17 +1,19 @@
-package nagicore.loongarch.nscscc2024
+package nagicore.loongarch.nscscc2024.stages
 
 import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
 //import nagicore.unit.{InstrsBuff, InstrsBuffCacheBundle}
 import nagicore.unit.cache.Cache
-import nagicore.loongarch.CtrlFlags
 import nagicore.GlobalConfg
 import nagicore.unit.cache.CacheReplaceType
+import nagicore.unit.BTBPredOutIO
+import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
+
 
 class if2idBits extends Bundle with Config{
     val pc          = UInt(XLEN.W)
-    val pred_nxt_pc = UInt(XLEN.W)
+    val bpu_out     = new BTBPredOutIO(BTB_ENTRYS, XLEN)
     val instr       = UInt(XLEN.W)
     
     val valid       = Bool()
@@ -45,7 +47,7 @@ class IF extends Module with Config{
     io.if2id.bits.instr := icache.io.master.back.bits.rdata
     io.if2id.bits.valid := icache.io.master.back.bits.valid
     io.if2id.bits.pc := icache.io.master.back.bits.pipedata.pc
-    io.if2id.bits.pred_nxt_pc := icache.io.master.back.bits.pipedata.pred_nxt_pc
+    io.if2id.bits.bpu_out := icache.io.master.back.bits.pipedata.bpu_out
 
     io.preif2if.stall := icache.io.master.front.stall
 

@@ -1,4 +1,4 @@
-package nagicore.loongarch
+package nagicore.loongarch.nscscc2024
 
 import chisel3._
 import chisel3.util._
@@ -8,10 +8,9 @@ import nagicore.unit.ALU
 import nagicore.unit.ALU_OP
 import nagicore.unit.BR_TYPE
 import nagicore.utils.Flags
-import org.json4s.scalap.scalasig.Flags
+import nagicore.loongarch.Instructions._
 
 object DecoderMap{
-    import Instructions._
     object ImmType{
         val si12    = "0000"
         val si20    = "0001"

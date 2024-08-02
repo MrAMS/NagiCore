@@ -3,7 +3,7 @@ package nagicore.loongarch.stages7
 import chisel3._
 import chisel3.util._
 import nagicore.utils.Flags
-import nagicore.loongarch.CtrlFlags
+import nagicore.loongarch.nscscc2024.CtrlFlags
 import nagicore.unit.ALU
 import nagicore.unit.BRU_SINGLE
 import org.json4s.scalap.scalasig.Flags

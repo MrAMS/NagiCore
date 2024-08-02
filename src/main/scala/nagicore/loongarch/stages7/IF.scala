@@ -5,7 +5,7 @@ import chisel3.util._
 import nagicore.bus.AXI4IO
 import nagicore.unit.{InstrsBuff, InstrsBuffCacheBundle}
 import nagicore.unit.cache.CachePiped
-import nagicore.loongarch.CtrlFlags
+import nagicore.loongarch.nscscc2024.CtrlFlags
 import nagicore.GlobalConfg
 
 class if2idBits extends Bundle with Config{

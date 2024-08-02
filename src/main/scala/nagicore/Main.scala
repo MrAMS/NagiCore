@@ -30,7 +30,7 @@ object Main extends App {
     target match {
         case "NSCSCC" => {
             GlobalConfg.SIM = false
-            exportVerilog(() => new nagicore.loongarch.CoreNSCSCC)
+            exportVerilog(() => new nagicore.loongarch.nscscc2024.CoreNSCSCC)
         }
         // case "TEST" => {
         //     exportVerilog(() => new Module{
@@ -45,7 +45,7 @@ object Main extends App {
         //     })
         // }
         case _ => {
-            exportVerilog(() => new nagicore.loongarch.Core)
+            exportVerilog(() => new nagicore.loongarch.nscscc2024.Core)
         }
     }
 }

@@ -1,14 +1,14 @@
-package nagicore.loongarch.nscscc2024
+package nagicore.loongarch.nscscc2024.stages
 
 import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
-import nagicore.loongarch.CtrlFlags
 import nagicore.unit.cache.CacheWT
 import nagicore.utils.Flags
 import nagicore.GlobalConfg
 import nagicore.unit.cache.UnCache
 import nagicore.unit.cache.CacheReplaceType
+import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
 
 class mem2wbBits extends Bundle with Config{
     val instr       = UInt(XLEN.W)
