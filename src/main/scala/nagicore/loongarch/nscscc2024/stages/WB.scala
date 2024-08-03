@@ -42,7 +42,7 @@ class WB extends Module with Config{
         CtrlFlags.ldType.w  -> wordData.zext,
     )).asUInt
 
-    val wb_data = Mux(preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x), rdata_mem, preg.alu_out)
+    val wb_data = Mux(!Flags.OHis(preg.ld_type, CtrlFlags.ldType.x), rdata_mem, preg.alu_out)
     io.wb2id.gpr_id := Mux(preg.valid, preg.rc, 0.U)
     io.wb2id.wb_data := wb_data
 

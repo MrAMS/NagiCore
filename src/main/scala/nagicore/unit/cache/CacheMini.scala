@@ -17,7 +17,7 @@ import nagicore.unit.RingBuff
   * @param dataBits
   * @param writeBuffLen 写缓存队列大小
   */
-class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int) extends Module{
+class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int, debug_id: Int) extends Module{
     require(isPowerOf2(writeBuffLen))
     val io = IO(new Bundle{
         val axi = new AXI4IO(addrBits, dataBits)
@@ -25,8 +25,9 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int) ext
             val req     = Bool()
             val bits    = new Bundle {
                 val addr    = UInt(addrBits.W)
-                val wmask   = UInt((dataBits/8).W)
                 val size    = UInt(2.W)
+                val we      = Bool()
+                val wmask   = UInt((dataBits/8).W)
                 val wdata   = UInt(dataBits.W)
                 val uncache = Bool()
             }
@@ -82,19 +83,23 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int) ext
         val data = UInt(dataBits.W)
         val valid = Bool()
     }
-    val L0 = RegInit(Vec(L0Size, {
+    val L0 = RegInit(VecInit(Seq.fill(L0Size){
         val bundle = Wire(new L0Data)
-        bundle.addr := 0.U
-        bundle.data := 0.U
+        bundle := DontCare
         bundle.valid := false.B
         bundle
     }))
+    // val L0 = Vec(L0Size, RegInit({
+    //     val bundle = Wire(new L0Data)
+    //     bundle := DontCare
+    //     bundle.valid := false.B
+    //     bundle
+    // }))
     val hits = VecInit.tabulate(L0Size)(i =>{
         L0(i).addr === io.in.bits.addr && L0(i).valid
     })
     val hit = hits.reduceTree(_||_) && !io.in.bits.uncache
-    val hit_index = PriorityEncoder(hits)
-    val hit_data = L0(hit_index)
+    val hit_data = L0(PriorityEncoder(hits)).data
     // 将uncache的数据写入到L0中
     def updateL0(addr: UInt, data: UInt) = {
         for(i <- 0 until (L0Size-1)){
@@ -105,12 +110,22 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int) ext
         L0(0).valid := true.B
     }
 
-    val ready_read = axi_r_agent.io.cmd.out.ready&&write_buff.io.empty&&axi_w_agent.io.cmd.out.ready
+    val ready_read = axi_r_agent.io.cmd.out.ready && write_buff.io.empty && axi_w_agent.io.cmd.out.ready
+
+    if(GlobalConfg.SIM){
+        import  nagicore.unit.DPIC_PERF_CACHE
+        val dpic_perf_cache = Module(new DPIC_PERF_CACHE)
+        dpic_perf_cache.io.clk := clock
+        dpic_perf_cache.io.rst := reset
+        dpic_perf_cache.io.valid := io.in.req
+        dpic_perf_cache.io.id := debug_id.U
+        dpic_perf_cache.io.access_type := Cat(0.U, !io.out.busy)
+    }
 
     switch(state){
         is(State.idle){
             when(io.in.req){
-                when(io.in.bits.wmask.orR){
+                when(io.in.bits.we){
                     // Write
                     when(write_buff.io.full){
                         state := State.waitWriteBuff
@@ -122,7 +137,7 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int) ext
                         write_buff.io.wdata := io.in.bits
                     }
 
-                    when(io.in.bits.wmask.andR && !io.in.bits.uncache){
+                    when(!io.in.bits.uncache){
                         updateL0(io.in.bits.addr, io.in.bits.wdata)
                     }
                 }.otherwise{

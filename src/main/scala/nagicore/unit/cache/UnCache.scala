@@ -18,7 +18,7 @@ import nagicore.unit.RingBuff
   * @param dataBits
   * @param writeBuffLen 写缓存队列大小
   */
-class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int) extends Module{
+class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) extends Module{
     require(isPowerOf2(writeBuffLen))
     val io = IO(new Bundle{
         val axi = new AXI4IO(addrBits, dataBits)
@@ -26,6 +26,7 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int) extends Module{
             val req     = Bool()
             val bits    = new Bundle {
                 val addr    = UInt(addrBits.W)
+                val we      = Bool()
                 val wmask   = UInt((dataBits/8).W)
                 val size    = UInt(2.W)
                 val wdata   = UInt(dataBits.W)
@@ -82,7 +83,7 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int) extends Module{
     switch(state){
         is(State.idle){
             when(io.in.req){
-                when(io.in.bits.wmask.orR){
+                when(io.in.bits.we){
                     // Write
                     when(write_buff.io.full){
                         state := State.waitWriteBuff
@@ -150,6 +151,16 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int) extends Module{
 
             write_buff.io.pop := true.B
         }
+    }
+
+    if(GlobalConfg.SIM){
+        import  nagicore.unit.DPIC_PERF_CACHE
+        val dpic_perf_cache = Module(new DPIC_PERF_CACHE)
+        dpic_perf_cache.io.clk := clock
+        dpic_perf_cache.io.rst := reset
+        dpic_perf_cache.io.valid := io.in.req
+        dpic_perf_cache.io.id := debug_id.U
+        dpic_perf_cache.io.access_type := Cat(0.U, !io.out.busy)
     }
 
 }

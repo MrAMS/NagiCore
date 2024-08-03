@@ -3,12 +3,12 @@ package nagicore.loongarch.nscscc2024.stages
 import chisel3._
 import chisel3.util._
 import nagicore.bus.AXI4IO
-import nagicore.unit.cache.CacheWT
+import nagicore.unit.cache.CacheMini
 import nagicore.utils.Flags
 import nagicore.GlobalConfg
-import nagicore.unit.cache.UnCache
 import nagicore.unit.cache.CacheReplaceType
 import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
+import nagicore.unit.cache.UnCache
 
 class mem2wbBits extends Bundle with Config{
     val instr       = UInt(XLEN.W)
@@ -52,7 +52,8 @@ class MEM extends Module with Config{
         val valid       = Bool()
     }
     
-    val dcache = Module(new UnCache(XLEN, XLEN, 8))
+    // val dcache = Module(new CacheMini(XLEN, XLEN, 8, 8, 1))
+    val dcache = Module(new UnCache(XLEN, XLEN, 8, 1))
 
     // pipeline registers
     val preg = RegEnable(io.ex2mem.bits, !dcache.io.out.busy && !io.mem2wb.stall)
@@ -63,6 +64,8 @@ class MEM extends Module with Config{
     val addr = preg.alu_out
 
     dcache.io.in.bits.addr := addr
+    // dcache.io.in.bits.uncache := addr(31, 28) === "hb".U
+    dcache.io.in.bits.we := !Flags.OHis(preg.st_type, CtrlFlags.stType.x)
     dcache.io.in.bits.wdata := Flags.onehotMux(preg.st_type, Seq(
         CtrlFlags.stType.x  -> 0.U,
         CtrlFlags.stType.b  -> Fill(XLEN/8, preg.rb_val(7, 0)),
@@ -89,7 +92,7 @@ class MEM extends Module with Config{
         CtrlFlags.stType.w  -> "b1111".U,
     ))
     // 不走Cache的指令
-    val nolr = (preg.ld_type === Flags.bp(CtrlFlags.ldType.x) && preg.st_type === Flags.bp(CtrlFlags.stType.x))
+    val nolr = Flags.OHis(preg.ld_type, CtrlFlags.ldType.x) && Flags.OHis(preg.st_type, CtrlFlags.stType.x)
     dcache.io.in.req := preg.valid && !nolr && RegNext(!dcache.io.out.busy) && !io.mem2wb.stall
 
     io.mem2wb.bits.alu_out := preg.alu_out

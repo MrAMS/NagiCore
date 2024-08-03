@@ -22,6 +22,7 @@ object Main extends App {
             FirtoolOption("--split-verilog"),
             FirtoolOption("-o=" + build_dir),
             FirtoolOption("--disable-all-randomization"),
+            FirtoolOption("--preserve-aggregate=none"),
         )
         val executeOptions = chiselStageOption ++ firtoolOptions
         val executeArgs = Array("-td", build_dir)
