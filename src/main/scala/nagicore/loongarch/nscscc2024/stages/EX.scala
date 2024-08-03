@@ -10,6 +10,8 @@ import nagicore.unit.BTBUpdateIO
 import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
 import nagicore.unit.BR_TYPE
 import nagicore.unit.BP_TYPE
+import nagicore.unit.MULU_IMP
+import nagicore.unit.DIVU_IMP
 
 class ex2preifIO extends Bundle with Config{
     val bpu_update  = new BTBUpdateIO(BTB_ENTRYS, XLEN)
@@ -50,7 +52,7 @@ class EX extends Module with Config{
     // stall signal from next stage
     val stall_nxt = io.ex2mem.stall
     
-    val alu = Module(new ALU(XLEN))
+    val alu = Module(new ALU(XLEN, MULU_IMP.synthesizer_DSP, DIVU_IMP.none))
     val busy = alu.io.busy
 
     // accept instrs from pre stage
@@ -118,8 +120,8 @@ class EX extends Module with Config{
                     ), kill_nxt
                 )
     stall_pre_counter := Mux(!stall_nxt,
-                            /* 当遇到加载指令时，应该请求上一级阻塞1个周期，并且无视接下来2个周期的指令(EX, DMEM) */
-                            Mux(is_ld, 2.U,
+                            /* 当遇到加载指令时，应该请求上一级阻塞1个周期，并且无视接下来1个周期的指令(EX) */
+                            Mux(is_ld, 1.U,
                                 Mux(stall_pre_counter===0.U, 0.U,
                                     stall_pre_counter-1.U
                                 )

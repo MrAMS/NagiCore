@@ -25,24 +25,7 @@ class WB extends Module with Config{
     // pipeline registers
     val preg = RegEnable(io.mem2wb.bits, true.B)
 
-    val rdata_raw = preg.rdata
-
-    val addr = preg.alu_out
-    val wordData = if(XLEN == 64) Mux(addr(2), rdata_raw(63, 32), rdata_raw(31, 0))
-                    else rdata_raw(31, 0)
-    val halfData = Mux(addr(1), wordData(31, 16), wordData(15, 0))
-    val byteData = Mux(addr(0), halfData(15, 8), halfData(7, 0))
-
-    val rdata_mem = Flags.onehotMux(preg.ld_type, Seq(
-        CtrlFlags.ldType.x  -> (0.U).zext,
-        CtrlFlags.ldType.b  -> byteData.asSInt,
-        CtrlFlags.ldType.bu -> byteData.zext,
-        CtrlFlags.ldType.h  -> halfData.asSInt,
-        CtrlFlags.ldType.hu -> halfData.zext,
-        CtrlFlags.ldType.w  -> wordData.zext,
-    )).asUInt
-
-    val wb_data = Mux(!Flags.OHis(preg.ld_type, CtrlFlags.ldType.x), rdata_mem, preg.alu_out)
+    val wb_data = Mux(Flags.OHis(preg.ld_type, CtrlFlags.ldType.x), preg.alu_out, preg.rdata)
     io.wb2id.gpr_id := Mux(preg.valid, preg.rc, 0.U)
     io.wb2id.wb_data := wb_data
 
@@ -69,7 +52,7 @@ class WB extends Module with Config{
         dpic_trace_mem_r.io.clk := clock
         dpic_trace_mem_r.io.rst := reset
         dpic_trace_mem_r.io.valid := preg.valid && preg.ld_type =/= Flags.bp(CtrlFlags.ldType.x)
-        dpic_trace_mem_r.io.addr := addr
+        dpic_trace_mem_r.io.addr := preg.alu_out
         dpic_trace_mem_r.io.size := Flags.onehotMux(preg.ld_type, Seq(
             CtrlFlags.ldType.x  -> 0.U,
             CtrlFlags.ldType.b  -> 0.U,
@@ -78,14 +61,7 @@ class WB extends Module with Config{
             CtrlFlags.ldType.hu -> 1.U,
             CtrlFlags.ldType.w  -> 2.U,
         ))
-        dpic_trace_mem_r.io.data := Flags.onehotMux(preg.ld_type, Seq(
-            CtrlFlags.ldType.x  -> (0.U).zext,
-            CtrlFlags.ldType.b  -> byteData.zext,
-            CtrlFlags.ldType.bu -> byteData.zext,
-            CtrlFlags.ldType.h  -> halfData.zext,
-            CtrlFlags.ldType.hu -> halfData.zext,
-            CtrlFlags.ldType.w  -> wordData.zext,
-        )).asUInt
+        dpic_trace_mem_r.io.data := preg.rdata
         dpic_trace_mem_r.io.wmask := 0.U
     }
 }

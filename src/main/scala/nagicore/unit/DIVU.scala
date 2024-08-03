@@ -6,7 +6,7 @@ import nagicore.utils.Flags
 
 object DIVU_IMP extends Enumeration {
     type DIVU_IMP = Value
-    val radix2 = Value
+    val none, radix2 = Value
 }
 
 class DIVU(dataBits: Int, imp_way: DIVU_IMP.DIVU_IMP = DIVU_IMP.radix2) extends Module{
@@ -17,7 +17,7 @@ class DIVU(dataBits: Int, imp_way: DIVU_IMP.DIVU_IMP = DIVU_IMP.radix2) extends 
         val quo     = Output(UInt(dataBits.W))
         val rem     = Output(UInt(dataBits.W))
         val valid   = Input(Bool())
-        val busy   = Output(Bool())
+        val busy    = Output(Bool())
     })
 
     imp_way match {
@@ -85,6 +85,11 @@ class DIVU(dataBits: Int, imp_way: DIVU_IMP.DIVU_IMP = DIVU_IMP.radix2) extends 
                 Mux(sign_r_reg2, ~rem_res + 1.U, rem_res),
                 rem_res
             )
+        }
+        case DIVU_IMP.none => {
+            io.busy := false.B
+            io.quo := DontCare
+            io.rem := DontCare
         }
     }
 }

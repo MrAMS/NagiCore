@@ -9,6 +9,7 @@ import nagicore.GlobalConfg
 import nagicore.unit.cache.CacheReplaceType
 import nagicore.unit.BTBPredOutIO
 import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
+import nagicore.bus.RamType
 
 
 class if2idBits extends Bundle with Config{
@@ -30,8 +31,11 @@ class IF extends Module with Config{
         val if2id = new if2idIO
         val isram = new AXI4IO(XLEN, XLEN)
     })
-    // 2-stages cache
-    val icache = Module(new Cache(XLEN, XLEN, ICACHE_WAYS, ICACHE_LINES, ICACHE_WORDS, () => new preif2ifBits(), CacheReplaceType.LRU, debug_id = 0))
+    // 2-stages 1cyc cache
+    val icache = Module(new Cache(XLEN, XLEN, ICACHE_WAYS, ICACHE_LINES, ICACHE_WORDS, () => new preif2ifBits(), CacheReplaceType.LRU, 
+        dataRamType = RamType.RAM_1CYC,
+        tagVRamType = RamType.RAM_1CYC,
+        debug_id = 0))
     icache.io.axi <> io.isram
 
     icache.io.master.front.bits.addr := io.preif2if.bits.pc

@@ -26,8 +26,8 @@ class Core extends Module with Config{
     wb_part.io.wb2id <> id_part.io.wb2id
     wb_part.io.stall_all := false.B
 
-    val isram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3))
-    val dsram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3))
+    val isram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3, 2))
+    val dsram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3, 2))
     val uart_axi4 = Module(new AXI4SRAM(XLEN, XLEN, 1.toLong<<XLEN, 8))
 
     // val dummy = Module(new AXI4Dummy(XLEN, XLEN))
@@ -82,8 +82,8 @@ class CoreNSCSCC extends Module with Config{
     wb_part.io.wb2id <> id_part.io.wb2id
     wb_part.io.stall_all := false.B
 
-    val isram_axi4_wrapper = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, RAM_DEPTH, 32, 3))
-    val dsram_axi4_wrapper = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, RAM_DEPTH, 32, 3))
+    val isram_axi4_wrapper = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, RAM_DEPTH, 32, 3, 2))
+    val dsram_axi4_wrapper = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, RAM_DEPTH, 32, 3, 2))
 
     if_part.io.isram <> isram_axi4_wrapper.io.axi
 

@@ -7,7 +7,7 @@ import nagicore.GlobalConfg
 
 object MULU_IMP extends Enumeration {
     type MULU_IMP = Value
-    val synthesizer_1cyc, oneBitShift, xsArrayMul, MultiplierIP, synthesizer_DSP = Value
+    val none, synthesizer_1cyc, oneBitShift, xsArrayMul, MultiplierIP, synthesizer_DSP = Value
 }
 
 object MULU_OP{
@@ -37,7 +37,7 @@ class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer_1cyc
     })
     if(GlobalConfg.SIM){
         imp_way match {
-            case MULU_IMP.xsArrayMul | MULU_IMP.MultiplierIP => {
+            case MULU_IMP.xsArrayMul | MULU_IMP.MultiplierIP | MULU_IMP.synthesizer_DSP => {
                 io.busy := io.vaild || RegNext(io.vaild)
             }
             case _ => {
@@ -107,6 +107,10 @@ class MULU(dataBits: Int, imp_way: MULU_IMP.MULU_IMP = MULU_IMP.synthesizer_1cyc
                     MULU_OP.MULHU   -> res(63, 32),
                 ), 0.U)
                 io.busy := io.vaild || RegNext(io.vaild) || RegNext(RegNext(io.vaild))
+            }
+            case MULU_IMP.none => {
+                io.busy := false.B
+                io.out := DontCare
             }
             case _ => {
                 io.busy := false.B

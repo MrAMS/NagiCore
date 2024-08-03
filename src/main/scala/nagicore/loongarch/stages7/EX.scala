@@ -8,6 +8,7 @@ import nagicore.unit.ALU
 import nagicore.unit.BRU_SINGLE
 import org.json4s.scalap.scalasig.Flags
 import nagicore.GlobalConfg
+import nagicore.unit.{MULU_IMP, DIVU_IMP}
 
 class ex2preifIO extends Bundle with Config{
     val br_pc       = Output(UInt(XLEN.W))
@@ -48,7 +49,7 @@ class EX extends Module with Config{
     // stall signal from next stage
     val stall_nxt = io.ex2mem.stall
     
-    val alu = Module(new ALU(XLEN))
+    val alu = Module(new ALU(XLEN, MULU_IMP.xsArrayMul, DIVU_IMP.radix2))
     val busy = alu.io.busy
 
     // accept instrs from pre stage

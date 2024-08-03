@@ -58,7 +58,7 @@ class ALUIO(dataBits: Int) extends Bundle{
     val busy    = Output(Bool())
 }
 
-class ALU(dataBits: Int) extends Module {
+class ALU(dataBits: Int, mulu_imp: MULU_IMP.MULU_IMP, divu_imp: DIVU_IMP.DIVU_IMP) extends Module {
     val io      = IO(new ALUIO(dataBits))
 
     val shamt   = io.b(4, 0).asUInt
@@ -74,7 +74,7 @@ class ALU(dataBits: Int) extends Module {
 
     // val mulu_imp = if(GlobalConfg.SIM) MULU_IMP.synthesizer_1cyc else MULU_IMP.xsArrayMul
 
-    val mulu = Module(new MULU(dataBits, MULU_IMP.xsArrayMul))
+    val mulu = Module(new MULU(dataBits, mulu_imp))
     mulu.io.a := io.a
     mulu.io.b := io.b
     mulu.io.op := io.op(1, 0)
@@ -84,7 +84,7 @@ class ALU(dataBits: Int) extends Module {
         MULHU   -> true.B,
     ), false.B)
 
-    val divu = Module(new DIVU(dataBits))
+    val divu = Module(new DIVU(dataBits, divu_imp))
     divu.io.a := io.a
     divu.io.b := io.b
     divu.io.signed := io.op(0)
@@ -97,6 +97,7 @@ class ALU(dataBits: Int) extends Module {
 
     // must assert when mul or div type comes immediately or can not stall instrs from pre stage
     io.busy := mulu.io.busy || divu.io.busy || mulu.io.vaild || divu.io.valid
+
 
     io.out := Flags.CasesMux(io.op, Seq(
         ADD     -> sum,

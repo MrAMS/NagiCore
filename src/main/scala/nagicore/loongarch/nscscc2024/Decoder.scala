@@ -89,17 +89,17 @@ object DecoderMap{
         // product = signed(GR[rj]) * signed(GR[rk]); GR[rd] = product[31:0]
         MULW        -> make_instr_list(alu_op=ALU_OP.MUL),
         // product = signed(GR[rj]) * signed(GR[rk]); GR[rd] = product[63:32]
-        MULHW       -> make_instr_list(alu_op=ALU_OP.MULH),
+        // MULHW       -> make_instr_list(alu_op=ALU_OP.MULH),
         // product = unsigned(GR[rj]) * unsigned(GR[rk]); GR[rd] = product[63:32]
-        MULHWU      -> make_instr_list(alu_op=ALU_OP.MULHU),
-        // quotient = signed(GR[rj]) / signed(GR[rk]); GR[rd] = quotient[31:0]
-        DIVW        -> make_instr_list(alu_op=ALU_OP.DIV),
-        // quotient = unsigned(GR[rj]) / unsigned(GR[rk]); GR[rd] = quotient[31:0]
-        DIVWU       -> make_instr_list(alu_op=ALU_OP.DIVU),
-        // remainder = signed(GR[rj]) % signed(GR[rk]); GR[rd] = remainder[31:0]
-        MODW        -> make_instr_list(alu_op=ALU_OP.MOD),
-        // remainder = unsigned(GR[rj]) % unsigned(GR[rk]); GR[rd] = remainder[31:0]
-        MODWU       -> make_instr_list(alu_op=ALU_OP.MODU),
+        // MULHWU      -> make_instr_list(alu_op=ALU_OP.MULHU),
+        // // quotient = signed(GR[rj]) / signed(GR[rk]); GR[rd] = quotient[31:0]
+        // DIVW        -> make_instr_list(alu_op=ALU_OP.DIV),
+        // // quotient = unsigned(GR[rj]) / unsigned(GR[rk]); GR[rd] = quotient[31:0]
+        // DIVWU       -> make_instr_list(alu_op=ALU_OP.DIVU),
+        // // remainder = signed(GR[rj]) % signed(GR[rk]); GR[rd] = remainder[31:0]
+        // MODW        -> make_instr_list(alu_op=ALU_OP.MOD),
+        // // remainder = unsigned(GR[rj]) % unsigned(GR[rk]); GR[rd] = remainder[31:0]
+        // MODWU       -> make_instr_list(alu_op=ALU_OP.MODU),
 
         // tmp = SLL(GR[rj], GR[rk][4:0]); GR[rd] = tmp[31:0]
         SLLW        -> make_instr_list(alu_op=ALU_OP.SL),

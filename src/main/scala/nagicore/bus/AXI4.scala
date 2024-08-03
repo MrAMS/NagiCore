@@ -311,7 +311,7 @@ class AXI4SRAM(addrBits: Int, dataBits: Int, depth: Long, width: Int, idBits: In
     io.sram.en := sram_read_req || io.axi.w.fire
 }
 
-class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long, width: Int, extCycs: Int=0) extends Module{
+class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long, width: Int, rExtCycs: Int=0, wExtCycs: Int=0) extends Module{
     val io = IO(new Bundle{
         val axi = Flipped(new AXI4IO(addrBits, dataBits, idBits))
         val sram = Flipped(new RamIO(dataBits, depth))
@@ -323,10 +323,10 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
 
     val rs_idle :: rs_r :: Nil = Enum(2)
     val rs = RegInit(rs_idle)
-    val rrcycs = RegInit(extCycs.U)
+    val rrcycs = RegInit(rExtCycs.U)
     when(rs === rs_r){
         when(io.axi.r.fire){
-            rrcycs := extCycs.U
+            rrcycs := rExtCycs.U
         }.otherwise{
             rrcycs := Mux(rrcycs === 0.U, 0.U, rrcycs - 1.U)
         }
@@ -359,10 +359,10 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
     val waddr = Reg(UInt(addrBits.W))
     val wid   = Reg(UInt(idBits.W))
     val wlen  = Reg(UInt(8.W))
-    val wwcycs = RegInit(extCycs.U)
+    val wwcycs = RegInit(wExtCycs.U)
     when(ws === ws_w){
         when(io.axi.w.fire){
-            wwcycs := extCycs.U
+            wwcycs := wExtCycs.U
         }.otherwise{
             wwcycs := Mux(wwcycs === 0.U, 0.U, wwcycs - 1.U)
         }
@@ -373,6 +373,7 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
         wid := io.axi.aw.bits.id
         wlen := io.axi.aw.bits.len
         ws := ws_w
+        assert(io.axi.w.valid)
     }
     when(io.axi.w.fire){
         waddr := waddr + (dataBits/8).U
@@ -392,12 +393,28 @@ class AXI4SRAM_MultiCycs(addrBits: Int, dataBits: Int, idBits: Int, depth: Long,
     io.axi.b.valid := ws === ws_b
     io.axi.b.bits.resp := 0.U
 
+    // io.sram.we := ws === ws_w || io.axi.aw.fire
     io.sram.we := ws === ws_w
+
+    // io.sram.re := rs === rs_r || io.axi.ar.fire
     io.sram.re := rs === rs_r
+
+    // io.sram.din := Mux(io.axi.ar.fire, io.axi.w.bits.data, RegNext(io.axi.w.bits.data))
     io.sram.din := io.axi.w.bits.data
+
+    // io.sram.wmask := Mux(io.axi.ar.fire, io.axi.w.bits.strb, RegNext(io.axi.w.bits.strb))
     io.sram.wmask := io.axi.w.bits.strb
-    val sram_addr = Mux(ws === ws_w, waddr, raddr)(addrBits-1, log2Ceil(width/8))
-    io.sram.addr := sram_addr
+
+    val sram_addr = Mux(ws === ws_w, waddr, raddr)
+    // val sram_addr = Mux1H(Seq(
+    //     (io.axi.aw.fire) -> io.axi.aw.bits.addr,
+    //     (ws === ws_w) -> waddr,
+    //     (io.axi.ar.fire) -> io.axi.ar.bits.addr,
+    //     (rs === rs_r) -> raddr
+    // ))
+    io.sram.addr := sram_addr(addrBits-1, log2Ceil(width/8))
+    
+    // io.sram.en := rs === rs_r || ws === ws_w || io.axi.ar.fire || io.axi.aw.fire
     io.sram.en := rs === rs_r || ws === ws_w
 }
 

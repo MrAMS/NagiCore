@@ -95,16 +95,31 @@ class MEM extends Module with Config{
     val nolr = Flags.OHis(preg.ld_type, CtrlFlags.ldType.x) && Flags.OHis(preg.st_type, CtrlFlags.stType.x)
     dcache.io.in.req := preg.valid && !nolr && RegNext(!dcache.io.out.busy) && !io.mem2wb.stall
 
+    val rdata_raw = dcache.io.out.rdata
+    val wordData = if(XLEN == 64) Mux(addr(2), rdata_raw(63, 32), rdata_raw(31, 0))
+                    else rdata_raw(31, 0)
+    val halfData = Mux(addr(1), wordData(31, 16), wordData(15, 0))
+    val byteData = Mux(addr(0), halfData(15, 8), halfData(7, 0))
+
+    val rdata_mem = Flags.onehotMux(preg.ld_type, Seq(
+        CtrlFlags.ldType.x  -> (0.U).zext,
+        CtrlFlags.ldType.b  -> byteData.asSInt,
+        CtrlFlags.ldType.bu -> byteData.zext,
+        CtrlFlags.ldType.h  -> halfData.asSInt,
+        CtrlFlags.ldType.hu -> halfData.zext,
+        CtrlFlags.ldType.w  -> wordData.zext,
+    )).asUInt
+
     io.mem2wb.bits.alu_out := preg.alu_out
     io.mem2wb.bits.instr := preg.instr
     io.mem2wb.bits.ld_type := preg.ld_type
     io.mem2wb.bits.pc := preg.pc
     io.mem2wb.bits.rc := preg.rc
-    io.mem2wb.bits.rdata := dcache.io.out.rdata
+    io.mem2wb.bits.rdata := rdata_mem
     io.mem2wb.bits.valid := preg.valid && !dcache.io.out.busy
 
     io.mem2id.bypass_rc := Mux(preg.valid, preg.rc, 0.U)
-    io.mem2id.bypass_val := preg.alu_out
+    io.mem2id.bypass_val := Mux(Flags.OHis(preg.ld_type, CtrlFlags.ldType.x), preg.alu_out, rdata_mem)
 
     // when(nolr){
     //     io.mem2id.bypass_rc := Mux(preg.valid, preg.rc, 0.U)

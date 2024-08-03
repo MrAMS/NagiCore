@@ -61,7 +61,10 @@ class CacheIO[T <: Bundle](addrBits: Int, dataBits: Int, blockWords: Int, pipeda
 class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blockWords: Int,
                          pipedataT: () => T,
                          replaceT: CacheReplaceType.CacheReplaceType=CacheReplaceType.Random,
-                         debug_id: Int=0) extends Module{
+                         dataRamType: RamType.RamType = RamType.BRAM_1CYC,
+                         tagVRamType: RamType.RamType = RamType.BRAM_1CYC,
+                         debug_id: Int=0
+                         ) extends Module{
     require(isPowerOf2(ways))
     require(isPowerOf2(dataBits))
 
@@ -105,9 +108,9 @@ class Cache[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, blo
 
     val active_way = Reg(UInt(log2Up(ways).W))
 
-    val data_bank = Seq.fill(ways)(Seq.fill(num_word)(Module(new Ram(dataBits, sets, RamType.RAM_1CYC))))
+    val data_bank = Seq.fill(ways)(Seq.fill(num_word)(Module(new Ram(dataBits, sets, dataRamType))))
     val data_bank_io = VecInit(data_bank.map(t => VecInit(t.map(_.io))))
-    val tag_v = Seq.fill(ways)(Module(new Ram(len_tag+1, sets, RamType.RAM_1CYC)))
+    val tag_v = Seq.fill(ways)(Module(new Ram(len_tag+1, sets, tagVRamType)))
     val tag_v_io = VecInit(tag_v.map(_.io))
     val dirty = Seq.fill(ways)(Module(new Ram(1, sets, RamType.RAM_1CYC)))
     val dirty_io = VecInit(dirty.map(_.io))
