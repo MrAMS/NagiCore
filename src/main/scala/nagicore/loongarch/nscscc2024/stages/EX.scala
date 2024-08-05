@@ -23,6 +23,7 @@ class ex2idIO extends Bundle with Config{
     // effective signal
     val bypass_rc   = Output(UInt(GPR_LEN.W))
     val bypass_val  = Output(UInt(XLEN.W))
+    val bypass_en   = Output(Bool())
 }
 
 class ex2memBits extends Bundle with Config{
@@ -169,8 +170,9 @@ class EX extends Module with Config{
 
     io.ex2mem.bits.pc := preg.pc
 
-    io.ex2id.bypass_rc := Mux(valid_instr, preg.rc, 0.U)
+    io.ex2id.bypass_rc := preg.rc
     io.ex2id.bypass_val := alu.io.out
+    io.ex2id.bypass_en := valid_instr
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_PERF_PIPE

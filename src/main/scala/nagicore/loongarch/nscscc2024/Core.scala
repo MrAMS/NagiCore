@@ -13,7 +13,6 @@ class Core extends Module with Config{
     val id_part = Module(new stages.ID)
     val ex_part = Module(new stages.EX)
     val mem_part = Module(new stages.MEM)
-    val wb_part = Module(new stages.WB)
 
     preif_part.io.preif2if <> if_part.io.preif2if
     if_part.io.if2id <> id_part.io.if2id
@@ -22,9 +21,7 @@ class Core extends Module with Config{
     ex_part.io.ex2id <> id_part.io.ex2id
     ex_part.io.ex2mem <> mem_part.io.ex2mem
     mem_part.io.mem2id <> id_part.io.mem2id
-    mem_part.io.mem2wb <> wb_part.io.mem2wb
-    wb_part.io.wb2id <> id_part.io.wb2id
-    wb_part.io.stall_all := false.B
+    mem_part.io.stall_all := false.B
 
     val isram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3, 2))
     val dsram_ctrl = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, 1.toLong<<XLEN, 8, 3, 2))
@@ -69,7 +66,6 @@ class CoreNSCSCC extends Module with Config{
     val id_part = Module(new stages.ID)
     val ex_part = Module(new stages.EX)
     val mem_part = Module(new stages.MEM)
-    val wb_part = Module(new stages.WB)
 
     preif_part.io.preif2if <> if_part.io.preif2if
     if_part.io.if2id <> id_part.io.if2id
@@ -78,9 +74,7 @@ class CoreNSCSCC extends Module with Config{
     ex_part.io.ex2id <> id_part.io.ex2id
     ex_part.io.ex2mem <> mem_part.io.ex2mem
     mem_part.io.mem2id <> id_part.io.mem2id
-    mem_part.io.mem2wb <> wb_part.io.mem2wb
-    wb_part.io.wb2id <> id_part.io.wb2id
-    wb_part.io.stall_all := false.B
+    mem_part.io.stall_all := false.B
 
     val isram_axi4_wrapper = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, RAM_DEPTH, 32, 3, 2))
     val dsram_axi4_wrapper = Module(new AXI4SRAM_MultiCycs(XLEN, XLEN, 8, RAM_DEPTH, 32, 3, 2))

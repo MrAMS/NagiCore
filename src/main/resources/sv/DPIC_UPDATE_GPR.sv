@@ -8,11 +8,12 @@ module DPIC_UPDATE_GPR #(
     input   wire clk,
     input   wire rst,
     input   wire [$clog2(GPR_NUM)-1:0] id,
+    input   wire wen,
     input   wire [DATA_WIDTH-1:0] wdata
 );
 
 always @(posedge clk) begin
-    if(!rst && id!=0) begin
+    if(!rst && id!=0 && wen) begin
         dpic_update_gpr({{8-$clog2(GPR_NUM){1'b0}}, id}, wdata);
     end
 end

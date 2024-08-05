@@ -43,6 +43,7 @@ class DPIC_UPDATE_GPR(gpr_num: Int, data_width: Int) extends BlackBox(Map("GPR_N
         val clk     = Input(Clock())
         val rst     = Input(Bool())
         val id      = Input(UInt(log2Ceil(gpr_num).W))
+        val wen     = Input(Bool())
         val wdata   = Input(UInt(data_width.W))
     })
     addResource("/sv/DPIC_TYPES_DEFINE.sv")
