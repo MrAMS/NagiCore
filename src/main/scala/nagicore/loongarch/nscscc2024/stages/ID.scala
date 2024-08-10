@@ -24,6 +24,7 @@ class id2exBits extends Bundle with Config{
     val brpcAdd_sel = CtrlFlags.brpcAddSel()
     val ld_type     = CtrlFlags.ldType()
     val st_type     = CtrlFlags.stType()
+    val pc_refill   = Bool()
     val bpu_out     = new BTBPredOutIO(BTB_ENTRYS, XLEN)
 
     val valid       = Bool()
@@ -108,5 +109,7 @@ class ID extends Module with Config{
     io.id2ex.bits.st_type := decoder.io.st_type
 
     io.id2ex.bits.bpu_out := preg.bpu_out
+
+    io.id2ex.bits.pc_refill := preg.pc_refill
 
 }

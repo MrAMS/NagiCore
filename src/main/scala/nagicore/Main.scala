@@ -3,6 +3,7 @@ package nagicore
 import chisel3._
 import chisel3.util._ 
 import _root_.circt.stage._
+import loongarch.nscscc2024.{CoreNSCSCC, Core}
 
 object Main extends App {
     val target = args(0)

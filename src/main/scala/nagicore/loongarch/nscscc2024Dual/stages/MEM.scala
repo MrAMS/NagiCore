@@ -1,4 +1,4 @@
-package nagicore.loongarch.nscscc2024.stages
+package nagicore.loongarch.nscscc2024Dual.stages
 
 import chisel3._
 import chisel3.util._
@@ -7,7 +7,7 @@ import nagicore.unit.cache.CacheMini
 import nagicore.utils.Flags
 import nagicore.GlobalConfg
 import nagicore.unit.cache.CacheReplaceType
-import nagicore.loongarch.nscscc2024.{Config, CtrlFlags}
+import nagicore.loongarch.nscscc2024Dual.{Config, CtrlFlags}
 import nagicore.unit.cache.UnCache
 
 class mem2idIO extends Bundle with Config{
@@ -41,7 +41,7 @@ class MEM extends Module with Config{
     }
     
     // val dcache = Module(new CacheMini(XLEN, XLEN, 8, 8, 1))
-    val dcache = Module(new UnCache(XLEN, XLEN, WBUFF_LEN, 1))
+    val dcache = Module(new UnCache(XLEN, XLEN, 8, 1))
 
     // pipeline registers
     val preg = RegEnable(io.ex2mem.bits, !dcache.io.out.busy && !io.stall_all)

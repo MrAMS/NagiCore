@@ -1,4 +1,4 @@
-package nagicore.loongarch.stages7
+package nagicore.loongarch.nscscc2024Dual
 
 import chisel3._
 import chisel3.util._
@@ -14,11 +14,9 @@ trait Config{
     def ICACHE_LINES = 128
     def ICACHE_WORDS = 4
 
-    def INSTRS_BUFF_SIZE = 8
+    def WBUFF_LEN = 8
 
-    def DCACHE_WAYS = 2
-    def DCACHE_LINES = 128*4
-    def DCACHE_WORDS = 8
+    def BTB_ENTRYS = 8
 
     def AXI4IDBITS = 4
 }

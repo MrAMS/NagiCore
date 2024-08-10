@@ -46,7 +46,7 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int, deb
     val write_buff = Module(new RingBuff(()=>new WriteInfo, writeBuffLen))
     write_buff.io.push := false.B
     write_buff.io.pop := false.B
-    write_buff.io.wdata := DontCare
+    write_buff.io.whead := DontCare
     write_buff.io.clear := false.B
 
     val axi_w_agent = Module(new AXI4WriteAgent(addrBits, dataBits, 1))
@@ -134,7 +134,7 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int, deb
                         cmd_reg := io.in.bits
                     }.otherwise{
                         write_buff.io.push := true.B
-                        write_buff.io.wdata := io.in.bits
+                        write_buff.io.whead := io.in.bits
                     }
 
                     when(!io.in.bits.uncache){
@@ -166,7 +166,7 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int, deb
         is(State.waitWriteBuff){
             when(!write_buff.io.full){
                 write_buff.io.push := true.B
-                write_buff.io.wdata := cmd_reg
+                write_buff.io.whead := cmd_reg
 
                 io.out.busy := false.B
                 state := State.idle
@@ -197,11 +197,11 @@ class CacheMini(addrBits:Int, dataBits: Int, writeBuffLen: Int, L0Size: Int, deb
     when(!write_buff.io.empty){
         when(axi_w_agent.io.cmd.out.ready){
             axi_w_agent.io.cmd.in.req := true.B
-            axi_w_agent.io.cmd.in.addr := write_buff.io.rdata.addr
+            axi_w_agent.io.cmd.in.addr := write_buff.io.rtail.addr
             axi_w_agent.io.cmd.in.len := 0.U
-            axi_w_agent.io.cmd.in.size := write_buff.io.rdata.size
-            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rdata.wdata
-            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rdata.wmask
+            axi_w_agent.io.cmd.in.size := write_buff.io.rtail.size
+            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rtail.wdata
+            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rtail.wmask
 
             write_buff.io.pop := true.B
         }

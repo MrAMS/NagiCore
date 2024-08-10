@@ -37,17 +37,7 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) e
             val rdata   = UInt(dataBits.W)
         })
     })
-    class WriteInfo extends Bundle{
-        val addr    = UInt(addrBits.W)
-        val size    = UInt(2.W)
-        val wmask   = UInt((dataBits/8).W)
-        val wdata   = UInt(dataBits.W)
-    }
-    val write_buff = Module(new RingBuff(()=>new WriteInfo, writeBuffLen))
-    write_buff.io.push := false.B
-    write_buff.io.pop := false.B
-    write_buff.io.wdata := DontCare
-    write_buff.io.clear := false.B
+
 
     val axi_w_agent = Module(new AXI4WriteAgent(addrBits, dataBits, 1))
     axi_w_agent.io.axi.aw <> io.axi.aw
@@ -70,29 +60,36 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) e
 
     object State extends ChiselEnum {
         val idle            = Value(1.U)
-        val waitWriteBuff   = Value(2.U)
-        val waitReadReady   = Value(4.U)
-        val waitRead        = Value(8.U)
+        val waitWriteReady  = Value(2.U)
+        val waitWrite       = Value(4.U)
+        val waitReadReady   = Value(8.U)
+        val waitRead        = Value(16.U)
     }
     val state = RegInit(State.idle)
 
     io.out.busy := state =/= State.idle // ...
 
-    val ready_read = axi_r_agent.io.cmd.out.ready&&write_buff.io.empty&&axi_w_agent.io.cmd.out.ready
+    val ready_write = axi_w_agent.io.cmd.out.ready
+    val ready_read = axi_r_agent.io.cmd.out.ready && axi_w_agent.io.cmd.out.ready
 
     switch(state){
         is(State.idle){
             when(io.in.req){
+                cmd_reg := io.in.bits
                 when(io.in.bits.we){
                     // Write
-                    when(write_buff.io.full){
-                        state := State.waitWriteBuff
-                        io.out.busy := true.B
+                    when(ready_write){
+                        axi_w_agent.io.cmd.in.req := true.B
+                        axi_w_agent.io.cmd.in.addr := io.in.bits.addr
+                        axi_w_agent.io.cmd.in.len := 0.U
+                        axi_w_agent.io.cmd.in.size := io.in.bits.size
+                        axi_w_agent.io.cmd.in.wdata(0) := io.in.bits.wdata
+                        axi_w_agent.io.cmd.in.wmask(0) := io.in.bits.wmask
 
-                        cmd_reg := io.in.bits
+                        state := State.idle
                     }.otherwise{
-                        write_buff.io.push := true.B
-                        write_buff.io.wdata := io.in.bits
+                        state := State.waitWriteReady
+                        io.out.busy := true.B
                     }
                 }.otherwise{
                     // Read
@@ -104,20 +101,21 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) e
 
                         state := State.waitRead
                     }.otherwise{
-                        cmd_reg := io.in.bits
-
                         state := State.waitReadReady
                     }
-                    io.out.busy := true.B   
+                    io.out.busy := true.B 
                 }
             }
         }
-        is(State.waitWriteBuff){
-            when(!write_buff.io.full){
-                write_buff.io.push := true.B
-                write_buff.io.wdata := cmd_reg
+        is(State.waitWriteReady){
+            when(ready_write){
+                axi_w_agent.io.cmd.in.req := true.B
+                axi_w_agent.io.cmd.in.addr := cmd_reg.addr
+                axi_w_agent.io.cmd.in.len := 0.U
+                axi_w_agent.io.cmd.in.size := cmd_reg.size
+                axi_w_agent.io.cmd.in.wdata(0) := cmd_reg.wdata
+                axi_w_agent.io.cmd.in.wmask(0) := cmd_reg.wmask
 
-                io.out.busy := false.B
                 state := State.idle
             }
         }
@@ -137,19 +135,6 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) e
                 assert(axi_r_agent.io.cmd.out.resp === 0.U)
                 state := State.idle
             }
-        }
-    }
-
-    when(!write_buff.io.empty){
-        when(axi_w_agent.io.cmd.out.ready){
-            axi_w_agent.io.cmd.in.req := true.B
-            axi_w_agent.io.cmd.in.addr := write_buff.io.rdata.addr
-            axi_w_agent.io.cmd.in.len := 0.U
-            axi_w_agent.io.cmd.in.size := write_buff.io.rdata.size
-            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rdata.wdata
-            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rdata.wmask
-
-            write_buff.io.pop := true.B
         }
     }
 

@@ -1,12 +1,14 @@
-package nagicore.loongarch.stages7
+package nagicore.loongarch.nscscc2024Dual.stages
 
 import chisel3._
 import chisel3.util._
-import nagicore.loongarch.nscscc2024.Decoder
 import nagicore.unit.GPR
-import nagicore.loongarch.nscscc2024.CtrlFlags
 import nagicore.unit.ALU_OP
 import nagicore.unit.BR_TYPE
+import nagicore.unit.BTBPredOutIO
+import nagicore.loongarch.nscscc2024Dual.{Config, CtrlFlags, Decoder}
+import nagicore.GlobalConfg
+
 
 class id2exBits extends Bundle with Config{
     val instr       = UInt(XLEN.W)
@@ -22,6 +24,7 @@ class id2exBits extends Bundle with Config{
     val brpcAdd_sel = CtrlFlags.brpcAddSel()
     val ld_type     = CtrlFlags.ldType()
     val st_type     = CtrlFlags.stType()
+    val bpu_out     = new BTBPredOutIO(BTB_ENTRYS, XLEN)
 
     val valid       = Bool()
 }
@@ -35,7 +38,6 @@ class ID extends Module with Config{
     val io = IO(new Bundle{
         val if2id = Flipped(new if2idIO)
         val id2ex = new id2exIO
-        val wb2id = Flipped(new wb2idIO)
 
         val ex2id = Flipped(new ex2idIO)
         val mem2id = Flipped(new mem2idIO)
@@ -54,40 +56,40 @@ class ID extends Module with Config{
     io.id2ex.bits.pc       := preg.pc
 
     val gpr     = Module(new GPR(XLEN, GPR_NUM, 2))
-    gpr.io.wen := true.B
-    gpr.io.waddr := io.wb2id.gpr_id
-    gpr.io.wdata := io.wb2id.wb_data
+    gpr.io.wen := io.mem2id.gpr_wen
+    gpr.io.waddr := io.mem2id.gpr_wid
+    gpr.io.wdata := io.mem2id.gpr_wdata
+
+    if(GlobalConfg.SIM){
+        import nagicore.unit.DPIC_UPDATE_GPR
+        val dpic_update_gpr = Module(new DPIC_UPDATE_GPR(XLEN, GPR_NUM))
+        dpic_update_gpr.io.clk := clock
+        dpic_update_gpr.io.rst := reset
+        dpic_update_gpr.io.id := gpr.io.waddr
+        dpic_update_gpr.io.wen := gpr.io.wen
+        dpic_update_gpr.io.wdata := gpr.io.wdata
+    }
+
+    def bypass_unit(rx: UInt, gpr_rdata: UInt):UInt = {
+        Mux(rx === 0.U, 0.U,
+            Mux(io.ex2id.bypass_rc === rx && io.ex2id.bypass_en, io.ex2id.bypass_val,
+                Mux(io.mem2id.bypass_rc === rx && io.mem2id.bypass_en, io.mem2id.bypass_val,
+                    gpr_rdata
+                )
+            )
+        )
+    }
 
     val ra = decoder.io.ra
     gpr.io.raddr(0) := ra
     // bypass
-    io.id2ex.bits.ra_val := Mux(ra === 0.U, 0.U,
-                                Mux(io.ex2id.bypass_rc === ra, io.ex2id.bypass_val,
-                                    Mux(io.mem2id.bypass1_rc === ra, io.mem2id.bypass1_val,
-                                        Mux(io.mem2id.bypass2_rc === ra, io.mem2id.bypass2_val,
-                                            Mux(io.wb2id.bypass_rc === ra, io.wb2id.bypass_val,
-                                                gpr.io.rdata(0)
-                                            )
-                                        )
-                                    )
-                                )
-                            )
+    io.id2ex.bits.ra_val := bypass_unit(ra, gpr.io.rdata(0))
     io.id2ex.bits.aluA_sel := decoder.io.aluA_sel
 
     val rb = decoder.io.rb
     gpr.io.raddr(1) := rb
     // bypass
-    io.id2ex.bits.rb_val := Mux(rb === 0.U, 0.U,
-                        Mux(io.ex2id.bypass_rc === rb, io.ex2id.bypass_val,
-                            Mux(io.mem2id.bypass1_rc === rb, io.mem2id.bypass1_val,
-                                Mux(io.mem2id.bypass2_rc === rb, io.mem2id.bypass2_val,
-                                    Mux(io.wb2id.bypass_rc === rb, io.wb2id.bypass_val,
-                                            gpr.io.rdata(1)
-                                        )
-                            )
-                        )
-                    )
-    )
+    io.id2ex.bits.rb_val := bypass_unit(rb, gpr.io.rdata(1))
 
     io.id2ex.bits.aluB_sel := decoder.io.aluB_sel
 
@@ -104,5 +106,7 @@ class ID extends Module with Config{
     io.id2ex.bits.ld_type := decoder.io.ld_type
 
     io.id2ex.bits.st_type := decoder.io.st_type
+
+    io.id2ex.bits.bpu_out := preg.bpu_out
 
 }

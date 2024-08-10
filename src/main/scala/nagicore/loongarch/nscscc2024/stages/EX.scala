@@ -62,11 +62,17 @@ class EX extends Module with Config{
     val preg = RegEnable(io.id2ex.bits, accp_pre)
 
     /* kill following *valid instrs*, max 3 instrs */
-    val kill_nxt = RegInit(0.U(3.W))
+    // val kill_nxt = RegInit(0.U(3.W))
+
+    // 分支预测失败后，等待新的指令
+    val wait_refill = RegInit(false.B)
+    val refill_ready = !wait_refill || preg.pc_refill
+
     // stall pre stages in force
     val stall_pre_counter = RegInit(0.U(2.W))
 
-    val valid_instr = kill_nxt === 0.U && preg.valid && !busy && stall_pre_counter === 0.U
+    val valid_instr = refill_ready && preg.valid && !busy && stall_pre_counter === 0.U
+    val valid_once_instr = valid_instr && !stall_nxt
     val is_ld : Bool = valid_instr && !Flags.OHis(preg.ld_type, CtrlFlags.ldType.x)
     accp_pre := !(stall_nxt || busy)
 
@@ -83,7 +89,7 @@ class EX extends Module with Config{
     // valid_instr && bru.io.br_take
 
     val br_pred_fail = Mux(preg.bpu_out.taken, !bru.io.br_take || preg.bpu_out.target =/= br_pc,
-        bru.io.br_take) && valid_instr
+        bru.io.br_take) && valid_once_instr
     
     io.ex2preif.bpu_fail := br_pred_fail
     io.ex2preif.br_real_pc := Mux(bru.io.br_take, br_pc, preg.pc+4.U)
@@ -96,7 +102,7 @@ class EX extends Module with Config{
     io.ex2preif.bpu_update.pc := RegNext(preg.pc)
     io.ex2preif.bpu_update.target := RegNext(io.ex2preif.br_real_pc)
     io.ex2preif.bpu_update.taken := RegNext(bru.io.br_take)
-    io.ex2preif.bpu_update.valid := RegNext(valid_instr && !Flags.OHis(preg.br_type, BR_TYPE.NEVER))
+    io.ex2preif.bpu_update.valid := RegNext(valid_once_instr && !Flags.OHis(preg.br_type, BR_TYPE.NEVER))
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_PERF_BRU
@@ -104,22 +110,18 @@ class EX extends Module with Config{
         val dpic_perf_bru = Module(new DPIC_PERF_BRU)
         dpic_perf_bru.io.clk := clock
         dpic_perf_bru.io.rst := reset
-        dpic_perf_bru.io.valid := !Flags.OHis(preg.br_type, BR_TYPE.NEVER) && valid_instr
+        dpic_perf_bru.io.valid := !Flags.OHis(preg.br_type, BR_TYPE.NEVER) && valid_once_instr
         dpic_perf_bru.io.fail := br_pred_fail
     }
 
     io.ex2mem.bits.valid := valid_instr
-                    
-    kill_nxt := Mux(!stall_nxt && !busy && (kill_nxt === 0.U || io.id2ex.bits.valid),
-                    /* 当分支预测失败时，应该无视接下来3条有效指令(PREIF,IF,ID) */
-                    Mux(br_pred_fail, 3.U,
-                        // Mux(is_ld, 1.U,
-                            Mux(kill_nxt===0.U, 0.U,
-                                kill_nxt-1.U
-                            )
-                        // )
-                    ), kill_nxt
-                )
+
+    when(br_pred_fail){
+        wait_refill := true.B
+    }.elsewhen(preg.pc_refill){
+        wait_refill := false.B
+    }
+
     stall_pre_counter := Mux(!stall_nxt,
                             /* 当遇到加载指令时，应该请求上一级阻塞1个周期，并且无视接下来1个周期的指令(EX) */
                             Mux(is_ld, 1.U,
@@ -154,7 +156,7 @@ class EX extends Module with Config{
 
     // must assert for only one cycle
     // alu.io.valid := kill_nxt === 0.U && preg.valid && RegNext(accp_pre)
-    alu.io.valid := kill_nxt === 0.U && stall_pre_counter === 0.U && preg.valid && RegNext(accp_pre)
+    alu.io.valid := refill_ready && stall_pre_counter === 0.U && preg.valid && RegNext(accp_pre)
     alu.io.a := alu_a
     alu.io.b := alu_b
     alu.io.op := preg.alu_op

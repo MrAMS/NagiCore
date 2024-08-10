@@ -109,7 +109,7 @@ class CacheWT[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, b
     val write_buff = Module(new RingBuff(()=>new WriteInfo, writeBuffLen, debug_id))
     write_buff.io.push := false.B
     write_buff.io.pop := false.B
-    write_buff.io.wdata := DontCare
+    write_buff.io.whead := DontCare
     write_buff.io.clear := false.B
 
     val random_way = LFSR(16)(log2Up(ways)-1, 0)
@@ -286,10 +286,10 @@ class CacheWT[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, b
 
     def write_write_buff() = {
         write_buff.io.push := true.B
-        write_buff.io.wdata.addr := addr_reg
-        write_buff.io.wdata.size := preg.size
-        write_buff.io.wdata.wdata := wdata_real
-        write_buff.io.wdata.wmask := Fill(dataBits/8, 1.U)
+        write_buff.io.whead.addr := addr_reg
+        write_buff.io.whead.size := preg.size
+        write_buff.io.whead.wdata := wdata_real
+        write_buff.io.whead.wmask := Fill(dataBits/8, 1.U)
     }
 
     switch(state){
@@ -387,10 +387,10 @@ class CacheWT[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, b
         is(StageState.replaceWrite){
             when(!write_buff.io.full){
                 write_buff.io.push := true.B
-                write_buff.io.wdata.addr := preg.addr
-                write_buff.io.wdata.size := preg.size
-                write_buff.io.wdata.wdata := bypass_val(addr_word_reg)
-                write_buff.io.wdata.wmask := Fill(dataBits/8, 1.U)
+                write_buff.io.whead.addr := preg.addr
+                write_buff.io.whead.size := preg.size
+                write_buff.io.whead.wdata := bypass_val(addr_word_reg)
+                write_buff.io.whead.wmask := Fill(dataBits/8, 1.U)
                 state := StageState.replaceEnd
             }
         }
@@ -435,11 +435,11 @@ class CacheWT[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, b
     when(!write_buff.io.empty){
         when(axi_w_agent.io.cmd.out.ready){
             axi_w_agent.io.cmd.in.req := true.B
-            axi_w_agent.io.cmd.in.addr := write_buff.io.rdata.addr
+            axi_w_agent.io.cmd.in.addr := write_buff.io.rtail.addr
             axi_w_agent.io.cmd.in.len := 0.U
-            axi_w_agent.io.cmd.in.size := write_buff.io.rdata.size
-            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rdata.wdata
-            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rdata.wmask
+            axi_w_agent.io.cmd.in.size := write_buff.io.rtail.size
+            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rtail.wdata
+            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rtail.wmask
 
             write_buff.io.pop := true.B
         }
