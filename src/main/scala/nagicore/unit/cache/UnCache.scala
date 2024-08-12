@@ -85,7 +85,14 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) e
             when(io.in.req){
                 when(io.in.bits.we){
                     // Write
-                    when(write_buff.io.full){
+                    when(write_buff.io.empty && axi_w_agent.io.cmd.out.ready){
+                        axi_w_agent.io.cmd.in.req := true.B
+                        axi_w_agent.io.cmd.in.addr := io.in.bits.addr
+                        axi_w_agent.io.cmd.in.len := 0.U
+                        axi_w_agent.io.cmd.in.size := io.in.bits.size
+                        axi_w_agent.io.cmd.in.wdata(0) := io.in.bits.wdata
+                        axi_w_agent.io.cmd.in.wmask(0) := io.in.bits.wmask
+                    }.elsewhen(write_buff.io.full){
                         state := State.waitWriteBuff
                         io.out.busy := true.B
 

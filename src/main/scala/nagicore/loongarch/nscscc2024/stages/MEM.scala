@@ -41,7 +41,7 @@ class MEM extends Module with Config{
     }
     
     // val dcache = Module(new CacheMini(XLEN, XLEN, 8, 8, 1))
-    val dcache = Module(new UnCache(XLEN, XLEN, 8, 1))
+    val dcache = Module(new UnCache(XLEN, XLEN, WBUFF_LEN, 1))
 
     // pipeline registers
     val preg = RegEnable(io.ex2mem.bits, !dcache.io.out.busy && !io.stall_all)

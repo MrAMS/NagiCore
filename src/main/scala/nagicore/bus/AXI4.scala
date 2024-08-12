@@ -87,66 +87,61 @@ class AXI4WriteAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int
         }
     })
 
-    object State extends ChiselEnum {
-        val idle, write, resp = Value
-    }
-
-    val state = RegInit(State.idle)
     val axi_aw_count = RegInit(0.U(1.W))
     val axi_w_count = RegInit(0.U(log2Up(maxBeatsLen).W))
     val cmd_buf = Reg(chiselTypeOf(io.cmd.in))
 
-    io.cmd.out.ready := state === State.idle
+    val wait_aw = RegInit(false.B)
+    val wait_w = RegInit(false.B)
+    val wait_b = RegInit(false.B)
+
+    io.cmd.out.ready := !(wait_aw || wait_w || wait_b)
     io.cmd.out.resp := RegEnable(io.axi.b.bits.resp, io.axi.b.fire)
 
-    io.axi.aw.valid := false.B
-    io.axi.aw.bits.addr := cmd_buf.addr
+    when(io.cmd.in.req){
+        wait_aw := true.B
+        wait_w := true.B
+        wait_b := true.B
+        cmd_buf := io.cmd.in
+        assert(io.cmd.out.ready)
+    }
+
+    when(io.axi.aw.fire){
+        wait_aw := false.B
+    }
+
+    io.axi.aw.valid := wait_aw || io.cmd.in.req
+    io.axi.aw.bits.addr := Mux(wait_aw || wait_w || wait_b, cmd_buf.addr, io.cmd.in.addr)
     io.axi.aw.bits.id := DontCare
     // Burst_Length = AxLEN[7:0] + 1
-    io.axi.aw.bits.len := cmd_buf.len
+    io.axi.aw.bits.len := Mux(wait_aw || wait_w || wait_b, cmd_buf.len, io.cmd.in.len)
     // Burst size. This signal indicates the size of each transfer in the burst.
-    io.axi.aw.bits.size := cmd_buf.size
+    io.axi.aw.bits.size := Mux(wait_aw || wait_w || wait_b, cmd_buf.size, io.cmd.in.size)
     // The burst type: INCR
     io.axi.aw.bits.burst := 1.U
 
-    io.axi.w.valid := false.B
-    io.axi.w.bits.data := cmd_buf.wdata(if(maxBeatsLen==1) 0.U else axi_w_count)
-    io.axi.w.bits.strb := cmd_buf.wmask(if(maxBeatsLen==1) 0.U else axi_w_count)
-    io.axi.w.bits.last := axi_w_count === cmd_buf.len
-
-    io.axi.b.ready := false.B
-
-
-    switch(state){
-        is(State.idle){
-            when(io.cmd.in.req){
-                cmd_buf := io.cmd.in
-                axi_aw_count := 0.U
-                axi_w_count := 0.U
-                state := State.write
-            }
-        }
-        is(State.write){
-            io.axi.aw.valid := axi_aw_count =/= 1.U
-            when(io.axi.aw.fire){
-                axi_aw_count := axi_aw_count + 1.U
-            }
-            io.axi.w.valid := true.B
-            when(io.axi.w.fire){
-                axi_w_count := axi_w_count + 1.U
-                when(io.axi.w.bits.last){
-                    state := State.resp
-                }
-            }
-        }
-        is(State.resp){
-            io.axi.b.ready := true.B
-            when(io.axi.b.fire){
-                assert(io.axi.b.bits.resp === 0.U)
-                state := State.idle
-            }
+    when(io.axi.w.fire){
+        axi_w_count := axi_w_count + 1.U
+        when(io.axi.w.bits.last){
+            wait_w := false.B
         }
     }
+
+    io.axi.w.valid := wait_w || io.cmd.in.req
+    val w_index = if(maxBeatsLen==1) 0.U else axi_w_count
+    io.axi.w.bits.data := Mux(wait_w, cmd_buf.wdata(w_index), io.cmd.in.wdata(w_index))
+    io.axi.w.bits.strb := Mux(wait_w, cmd_buf.wmask(w_index), io.cmd.in.wmask(w_index))
+    io.axi.w.bits.last := axi_w_count === Mux(wait_w, cmd_buf.len, io.cmd.in.len)
+
+    when(io.axi.b.fire){
+        assert(io.axi.b.bits.resp === 0.U)
+        axi_aw_count := 0.U
+        axi_w_count := 0.U
+        wait_b := false.B
+        assert(wait_b)
+    }
+
+    io.axi.b.ready := !wait_aw && !wait_w
     
 }
 
@@ -174,57 +169,213 @@ class AXI4ReadAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int=
             val r  = Flipped(Decoupled(new AXI4RIO(dataBits, idBits)))
         }
     })
-    object State extends ChiselEnum {
-        val idle, ar, r = Value
-    }
-    val state = RegInit(State.idle)
+
     val axi_r_count = RegInit(0.U(log2Up(maxBeatsLen).W))
+    val wait_ar = RegInit(false.B)
+    val wait_r = RegInit(false.B)
     val cmd_buf = Reg(chiselTypeOf(io.cmd.in))
 
+    when(io.cmd.in.req){
+        wait_ar := true.B
+        cmd_buf := io.cmd.in
+        axi_r_count := 0.U
+        assert(io.cmd.out.ready)
+    }
 
-    io.axi.ar.valid := state === State.ar
+    when(io.axi.ar.fire){
+        wait_ar := false.B
+        wait_r := true.B
+    }
+
+    io.axi.ar.valid := io.cmd.in.req || wait_ar
     io.axi.ar.bits.burst := 1.U
     io.axi.ar.bits.id := DontCare
-    io.axi.ar.bits.addr := cmd_buf.addr
-    io.axi.ar.bits.len := cmd_buf.len
-    io.axi.ar.bits.size := cmd_buf.size
+    io.axi.ar.bits.addr := Mux(wait_ar || wait_r, cmd_buf.addr, io.cmd.in.addr)
+    io.axi.ar.bits.len := Mux(wait_ar || wait_r, cmd_buf.len, io.cmd.in.len)
+    io.axi.ar.bits.size := Mux(wait_ar || wait_r, cmd_buf.size, io.cmd.in.size)
+
+    when(io.axi.r.fire){
+        axi_r_count := axi_r_count + 1.U
+        when(io.axi.r.bits.last){
+            assert(io.axi.r.bits.last)
+            assert(io.axi.r.bits.resp === 0.U)
+            wait_r := false.B
+        }
+    }
     
-    io.axi.r.ready := false.B
+    io.axi.r.ready := wait_r
 
     io.cmd.out.order := axi_r_count
     io.cmd.out.rdata := io.axi.r.bits.data
-    io.cmd.out.ready := io.axi.r.fire || state === State.idle
+    io.cmd.out.ready := !(wait_ar || wait_r) || io.axi.r.fire
     io.cmd.out.resp  := io.axi.r.bits.resp
     io.cmd.out.last  := io.axi.r.bits.last
 
-    switch(state){
-        is(State.idle){
-            when(io.cmd.in.req){
-                cmd_buf := io.cmd.in
-//                axi_r_count := ~(0.U(log2Up(maxBeatsLen+1).W))
-                axi_r_count := 0.U
-                state := State.ar
-            }
-        }
-        is(State.ar){
-            when(io.axi.ar.fire){
-                state := State.r
-            }
-        }
-        is(State.r){
-            io.axi.r.ready := true.B
-            when(io.axi.r.fire){
-                axi_r_count := axi_r_count + 1.U
-                when(io.axi.r.bits.last){
-                    assert(io.axi.r.bits.last)
-                    assert(io.axi.r.bits.resp === 0.U)
-                    state := State.idle
-                }
-            }
-        }
-    }
 
 }
+// class AXI4WriteAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int=8) extends Module{
+//     val io = IO(new Bundle {
+//         val cmd = new Bundle {
+//             val in = Input(new Bundle {
+//                 val req     = Bool()
+//                 val addr    = UInt(addrBits.W)
+//                 // Burst Length: len+1
+//                 val len     = UInt(8.W)
+//                 // Each Transfer Size: 2^size bytes
+//                 val size    = UInt(3.W)
+//                 val wdata   = Vec(maxBeatsLen, UInt(dataBits.W))
+//                 val wmask   = Vec(maxBeatsLen, UInt(log2Up(dataBits).W))
+//             })
+//             val out = new Bundle {
+//                 val ready   = Output(Bool())
+//                 val resp    = Output(UInt(2.W))
+//             }
+//         }
+//         val axi = new Bundle {
+//             val aw = Decoupled(new AXI4AIO(addrBits, idBits))
+//             val w  = Decoupled(new AXI4WIO(dataBits))
+//             val b  = Flipped(Decoupled(new AXI4BIO(idBits)))
+//         }
+//     })
+
+//     object State extends ChiselEnum {
+//         val idle, write, resp = Value
+//     }
+
+//     val state = RegInit(State.idle)
+//     val axi_aw_count = RegInit(0.U(1.W))
+//     val axi_w_count = RegInit(0.U(log2Up(maxBeatsLen).W))
+//     val cmd_buf = Reg(chiselTypeOf(io.cmd.in))
+
+//     io.cmd.out.ready := state === State.idle
+//     io.cmd.out.resp := RegEnable(io.axi.b.bits.resp, io.axi.b.fire)
+
+//     io.axi.aw.valid := false.B
+//     io.axi.aw.bits.addr := cmd_buf.addr
+//     io.axi.aw.bits.id := DontCare
+//     // Burst_Length = AxLEN[7:0] + 1
+//     io.axi.aw.bits.len := cmd_buf.len
+//     // Burst size. This signal indicates the size of each transfer in the burst.
+//     io.axi.aw.bits.size := cmd_buf.size
+//     // The burst type: INCR
+//     io.axi.aw.bits.burst := 1.U
+
+//     io.axi.w.valid := false.B
+//     io.axi.w.bits.data := cmd_buf.wdata(if(maxBeatsLen==1) 0.U else axi_w_count)
+//     io.axi.w.bits.strb := cmd_buf.wmask(if(maxBeatsLen==1) 0.U else axi_w_count)
+//     io.axi.w.bits.last := axi_w_count === cmd_buf.len
+
+//     io.axi.b.ready := false.B
+
+
+//     switch(state){
+//         is(State.idle){
+//             when(io.cmd.in.req){
+//                 cmd_buf := io.cmd.in
+//                 axi_aw_count := 0.U
+//                 axi_w_count := 0.U
+//                 state := State.write
+//             }
+//         }
+//         is(State.write){
+//             io.axi.aw.valid := axi_aw_count =/= 1.U
+//             when(io.axi.aw.fire){
+//                 axi_aw_count := axi_aw_count + 1.U
+//             }
+//             io.axi.w.valid := true.B
+//             when(io.axi.w.fire){
+//                 axi_w_count := axi_w_count + 1.U
+//                 when(io.axi.w.bits.last){
+//                     state := State.resp
+//                 }
+//             }
+//         }
+//         is(State.resp){
+//             io.axi.b.ready := true.B
+//             when(io.axi.b.fire){
+//                 assert(io.axi.b.bits.resp === 0.U)
+//                 state := State.idle
+//             }
+//         }
+//     }
+    
+// }
+
+// class AXI4ReadAgent(addrBits: Int, dataBits: Int, maxBeatsLen: Int, idBits: Int=8) extends Module{
+//     val io = IO(new Bundle {
+//         val cmd = new Bundle {
+//             val in = Input(new Bundle {
+//                 val req     = Bool()
+//                 val addr    = UInt(addrBits.W)
+//                 // Burst Length: len+1
+//                 val len     = UInt(8.W)
+//                 // Each Transfer Size: 2^size bytes
+//                 val size    = UInt(3.W)
+//             })
+//             val out = new Bundle {
+//                 val ready   = Output(Bool())
+//                 val rdata   = Output(UInt(dataBits.W))
+//                 val resp    = Output(UInt(2.W))
+//                 val order   = Output(UInt(log2Up(maxBeatsLen).W))
+//                 val last    = Output(Bool())
+//             }
+//         }
+//         val axi = new Bundle {
+//             val ar = Decoupled(new AXI4AIO(addrBits, idBits))
+//             val r  = Flipped(Decoupled(new AXI4RIO(dataBits, idBits)))
+//         }
+//     })
+//     object State extends ChiselEnum {
+//         val idle, ar, r = Value
+//     }
+//     val state = RegInit(State.idle)
+//     val axi_r_count = RegInit(0.U(log2Up(maxBeatsLen).W))
+//     val cmd_buf = Reg(chiselTypeOf(io.cmd.in))
+
+
+//     io.axi.ar.valid := state === State.ar
+//     io.axi.ar.bits.burst := 1.U
+//     io.axi.ar.bits.id := DontCare
+//     io.axi.ar.bits.addr := cmd_buf.addr
+//     io.axi.ar.bits.len := cmd_buf.len
+//     io.axi.ar.bits.size := cmd_buf.size
+    
+//     io.axi.r.ready := false.B
+
+//     io.cmd.out.order := axi_r_count
+//     io.cmd.out.rdata := io.axi.r.bits.data
+//     io.cmd.out.ready := io.axi.r.fire || state === State.idle
+//     io.cmd.out.resp  := io.axi.r.bits.resp
+//     io.cmd.out.last  := io.axi.r.bits.last
+
+//     switch(state){
+//         is(State.idle){
+//             when(io.cmd.in.req){
+//                 cmd_buf := io.cmd.in
+// //                axi_r_count := ~(0.U(log2Up(maxBeatsLen+1).W))
+//                 axi_r_count := 0.U
+//                 state := State.ar
+//             }
+//         }
+//         is(State.ar){
+//             when(io.axi.ar.fire){
+//                 state := State.r
+//             }
+//         }
+//         is(State.r){
+//             io.axi.r.ready := true.B
+//             when(io.axi.r.fire){
+//                 axi_r_count := axi_r_count + 1.U
+//                 when(io.axi.r.bits.last){
+//                     assert(io.axi.r.bits.last)
+//                     assert(io.axi.r.bits.resp === 0.U)
+//                     state := State.idle
+//                 }
+//             }
+//         }
+//     }
+
+// }
 
 
 /**
