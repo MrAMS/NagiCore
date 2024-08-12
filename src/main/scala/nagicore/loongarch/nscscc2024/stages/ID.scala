@@ -55,19 +55,19 @@ class ID extends Module with Config{
     io.id2ex.bits.instr    := preg.instr
     io.id2ex.bits.pc       := preg.pc
 
-    val gpr     = Module(new GPR(XLEN, GPR_NUM, 2))
-    gpr.io.wen := io.mem2id.gpr_wen
-    gpr.io.waddr := io.mem2id.gpr_wid
-    gpr.io.wdata := io.mem2id.gpr_wdata
+    val gpr     = Module(new GPR(XLEN, GPR_NUM, 2, 1))
+    gpr.io.wen(0) := io.mem2id.gpr_wen
+    gpr.io.waddr(0) := io.mem2id.gpr_wid
+    gpr.io.wdata(0) := io.mem2id.gpr_wdata
 
     if(GlobalConfg.SIM){
         import nagicore.unit.DPIC_UPDATE_GPR
         val dpic_update_gpr = Module(new DPIC_UPDATE_GPR(XLEN, GPR_NUM))
         dpic_update_gpr.io.clk := clock
         dpic_update_gpr.io.rst := reset
-        dpic_update_gpr.io.id := gpr.io.waddr
-        dpic_update_gpr.io.wen := gpr.io.wen
-        dpic_update_gpr.io.wdata := gpr.io.wdata
+        dpic_update_gpr.io.id := gpr.io.waddr(0)
+        dpic_update_gpr.io.wen := gpr.io.wen(0)
+        dpic_update_gpr.io.wdata := gpr.io.wdata(0)
     }
 
     def bypass_unit(rx: UInt, gpr_rdata: UInt):UInt = {

@@ -43,11 +43,12 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) e
         val wmask   = UInt((dataBits/8).W)
         val wdata   = UInt(dataBits.W)
     }
-    val write_buff = Module(new RingBuff(()=>new WriteInfo, writeBuffLen))
+    val write_buff = Module(new RingBuff(()=>new WriteInfo, writeBuffLen, rchannel=1, debug_id=debug_id))
     write_buff.io.push := false.B
     write_buff.io.pop := false.B
     write_buff.io.wdata := DontCare
     write_buff.io.clear := false.B
+    write_buff.io.popN := 0.U
 
     val axi_w_agent = Module(new AXI4WriteAgent(addrBits, dataBits, 1))
     axi_w_agent.io.axi.aw <> io.axi.aw
@@ -150,11 +151,11 @@ class UnCache(addrBits:Int, dataBits: Int, writeBuffLen: Int, debug_id: Int=0) e
     when(!write_buff.io.empty){
         when(axi_w_agent.io.cmd.out.ready){
             axi_w_agent.io.cmd.in.req := true.B
-            axi_w_agent.io.cmd.in.addr := write_buff.io.rdata.addr
+            axi_w_agent.io.cmd.in.addr := write_buff.io.rdatas(0).addr
             axi_w_agent.io.cmd.in.len := 0.U
-            axi_w_agent.io.cmd.in.size := write_buff.io.rdata.size
-            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rdata.wdata
-            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rdata.wmask
+            axi_w_agent.io.cmd.in.size := write_buff.io.rdatas(0).size
+            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rdatas(0).wdata
+            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rdatas(0).wmask
 
             write_buff.io.pop := true.B
         }

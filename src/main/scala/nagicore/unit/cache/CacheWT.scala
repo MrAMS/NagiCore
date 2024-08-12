@@ -106,7 +106,7 @@ class CacheWT[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, b
         val wmask   = UInt((dataBits/8).W)
         val wdata   = UInt(dataBits.W)
     }
-    val write_buff = Module(new RingBuff(()=>new WriteInfo, writeBuffLen, debug_id))
+    val write_buff = Module(new RingBuff(()=>new WriteInfo, writeBuffLen, 1, debug_id))
     write_buff.io.push := false.B
     write_buff.io.pop := false.B
     write_buff.io.wdata := DontCare
@@ -435,11 +435,11 @@ class CacheWT[T <: Bundle](addrBits: Int, dataBits: Int, ways: Int, sets: Int, b
     when(!write_buff.io.empty){
         when(axi_w_agent.io.cmd.out.ready){
             axi_w_agent.io.cmd.in.req := true.B
-            axi_w_agent.io.cmd.in.addr := write_buff.io.rdata.addr
+            axi_w_agent.io.cmd.in.addr := write_buff.io.rdatas(0).addr
             axi_w_agent.io.cmd.in.len := 0.U
-            axi_w_agent.io.cmd.in.size := write_buff.io.rdata.size
-            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rdata.wdata
-            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rdata.wmask
+            axi_w_agent.io.cmd.in.size := write_buff.io.rdatas(0).size
+            axi_w_agent.io.cmd.in.wdata(0) := write_buff.io.rdatas(0).wdata
+            axi_w_agent.io.cmd.in.wmask(0) := write_buff.io.rdatas(0).wmask
 
             write_buff.io.pop := true.B
         }

@@ -27,6 +27,10 @@ object Flags{
         assert(expect.count(_ == '1')==1)
         input(expect.length-1-findFirstOne(expect).get).asBool
     }
+    def is[T <: Data](input: UInt, expect: String): Bool = {
+        assert(input.getWidth == expect.length)
+        input === Flags.bp(expect)
+    }
     def CasesMux[T <: Data](input: UInt, cases: Iterable[(String, T)], default: T) : T = {
         // check no duplicate
         assert(cases.map(x=>x._1).toSet.size == cases.size)
