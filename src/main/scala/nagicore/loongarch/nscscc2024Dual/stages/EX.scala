@@ -111,7 +111,8 @@ class EX extends Module with Config{
     io.ex2preif.bpu_fail := br_pred_fail
     io.ex2preif.br_real_pc := Mux(bru.io.br_take, br_pc, preg.pc1+4.U)
 
-    io.ex2is.clear_is := br_pred_fail
+    // 时序优化，延迟一拍
+    io.ex2is.clear_is := RegNext(br_pred_fail)
 
     io.ex2preif.bpu_update.bp_type := RegNext(Mux(Flags.OHis(preg.br_type, BR_TYPE.ALWAYS),
         Flags.U(BP_TYPE.jump), Flags.U(BP_TYPE.cond)

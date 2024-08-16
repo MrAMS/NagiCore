@@ -146,17 +146,25 @@ wire        io_uart_w_last,
             io_uart_b_ready;
 
 
-wire clk_150M;
+wire clk_cpu;
+wire clk_locked;
+reg rst_cpu;
 
 clk_wiz_0 clk_wiz_0_inst(
     .reset(reset_btn),
     .clk_50M(clk_50M),
-    .clk_150M(clk_150M)
+    .clk_cpu(clk_cpu),
+    .locked(clk_locked)
 );
 
+always @(posedge clk_cpu or negedge clk_locked) begin
+    if (~clk_locked) rst_cpu <= 1'b1;
+    else rst_cpu <= 1'b0;
+end
+
 CoreNSCSCC core(
-    .clock(clk_150M),
-    .reset(reset_btn),
+    .clock(clk_cpu),
+    .reset(rst_cpu),
     .io_isram_dout(io_isram_dout),
     .io_dsram_dout(io_dsram_dout),
     .io_isram_addr(io_isram_addr),
@@ -208,7 +216,7 @@ uart_wrapper#(
     .clk_freq(162000000),
     .uart_baud(9600)
 ) uart(
-    .clk(clk_150M),
+    .clk(clk_cpu),
     .rst(reset_btn),
 
     .txd(txd),

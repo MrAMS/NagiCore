@@ -14,6 +14,7 @@ class GPRIO(dataBits: Int, addrBits: Int, rchannel: Int, wchannel: Int) extends 
 class GPR(dataBits: Int, regNum: Int, rchannel: Int, wchannel: Int) extends Module {
     val io = IO(new GPRIO(dataBits, log2Up(regNum), rchannel, wchannel))
     val regs = Reg(Vec(regNum, UInt(dataBits.W)))
+    // val regs = Reg(VecInit.fill(regNum)(0.U(dataBits.W)))
     // val regs = Mem(regNum, UInt(dataBits.W))
     for(i <- 0 until rchannel){
         io.rdata(i) := Mux(io.raddr(i) =/= 0.U, regs(io.raddr(i)), 0.U)
