@@ -14,7 +14,7 @@ trait Config{
     def ICACHE_LINES = 128
     def ICACHE_WORDS = 4
 
-    def WBUFF_LEN = 8
+    def WBUFF_LEN = 4
 
     def BTB_ENTRYS = 8
 
