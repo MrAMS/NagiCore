@@ -1,5 +1,7 @@
 # 凪(Nagi) 顺序单/双发射LA32R处理器
 
+![Nagi](./docs/imgs/nagi.jpeg)
+
 ## Intro
 
 凪(**Nagi**，意为“风平浪静”)包含两个支持部分LoongArch32R指令集的处理器：
@@ -8,7 +10,9 @@
 
 Nagi系列处理器都具有Cache(缓存)、BTB(分支预测)、Store Buffer(写缓存)、多周期乘除法器等部件，并支持AXI4总线访问（包括突发传输），能够正确通过在仿真环境和FPGA上的所有等级测试和性能测试。
 
-Nagi系列处理器是为2024年龙芯杯个人赛设计的，最终取得了LoongArch赛道第4名，决赛现场第1名的成绩(`0.000s`)。值得一提的是，Nagi系列处理器是与[Nagi敏捷开发环境](https://github.com/MrAMS/Nagi)紧密联系的。
+Nagi系列处理器是使用Chisel进行开发的，与敏捷开发环境[NagiDev](https://github.com/MrAMS/Nagi)紧密联系，可基于Verilator进行完整仿真，同时也可生成龙芯杯所需的FPGA上板工程。
+
+Nagi系列处理器是为2024年[龙芯杯](http://www.nscscc.com/)个人赛设计的，最终取得了LoongArch赛道第4名，决赛现场第1名的成绩(`0.000s`)。
 
 ## 性能指标
 
@@ -40,4 +44,6 @@ NagiCore处理器采用五级流水线，包括预取指(PREIF)、取指(IF)、�
 
 NagiDual 处理器采用六级流水线，包括预取指(PREIF)、取指(IF)、译码(ID)、发射(IS)、执行(EX)、访存(MEM) 六个阶段。采用简单的非对称双发射结构以追求频率。
 
-![](./docs/imgs/nagicore-dual.dual.drawio.png)
+![NagiDual](./docs/imgs/nagicore-dual.dual.drawio.png)
+
+更详尽的设计介绍请参加大赛报告。
