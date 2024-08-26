@@ -1,6 +1,8 @@
 # 凪(Nagi) 顺序单/双发射LA32R处理器
 
-![Nagi](./docs/imgs/nagi.jpeg)
+<p align="center">
+<img src="./docs/imgs/nagi.jpeg" alt="Banner" style="max-width: 66%;">
+</p>
 
 ## Intro
 
@@ -46,4 +48,4 @@ NagiDual 处理器采用六级流水线，包括预取指(PREIF)、取指(IF)、
 
 ![NagiDual](./docs/imgs/nagicore-dual.dual.drawio.png)
 
-更详尽的设计介绍请参加大赛报告。
+更详尽的设计介绍请参见大赛报告。
