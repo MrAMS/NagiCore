@@ -38,7 +38,10 @@ NagiDual性能一览
 
 ## CPU架构
 
-Nagi系列处理器的流水线采用各模块解耦的分布式控制。由于个人赛的性能测试程序(CRYPTONIGHT)对DCache极不友好，而且在高频率下访存代价非常大，故均去除了DCache。
+![SoC结构](./docs/imgs/SoC.png)
+
+
+Nagi系列处理器的流水线采用各模块解耦的分布式控制。由于个人赛的性能测试程序(CRYPTONIGHT)对DCache极不友好，而且在高频率下访存代价非常大(采用多周期访存，SRAM最高工作频率仅约50MHz)，故均去除了DCache。
 
 NagiCore处理器采用五级流水线，包括预取指(PREIF)、取指(IF)、译码(ID)、执行(EX)、访存(MEM)五个阶段。
 
