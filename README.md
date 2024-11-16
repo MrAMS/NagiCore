@@ -38,8 +38,10 @@ NagiDual性能一览
 
 ## CPU架构
 
-![SoC结构](./docs/imgs/SoC.png)
 
+<p align="center">
+<img src="./docs/imgs/SoC.png" style="width: 66%;" alt="SoC架构图">
+</p>
 
 Nagi系列处理器的流水线采用各模块解耦的分布式控制。由于个人赛的性能测试程序(CRYPTONIGHT)对DCache极不友好，而且在高频率下访存代价非常大(采用多周期访存，SRAM最高工作频率仅约50MHz)，故均去除了DCache。
 
@@ -52,3 +54,5 @@ NagiDual 处理器采用六级流水线，包括预取指(PREIF)、取指(IF)、
 ![NagiDual](./docs/imgs/nagicore-dual.dual.drawio.png)
 
 更详尽的设计介绍请参见大赛设计报告`design.pdf`。
+
+<img src="https://count.moeyy.cn/get/@MrAMSNagiCore?theme=moebooru">
