@@ -14,7 +14,7 @@ Nagi系列处理器都具有Cache(缓存)、BTB(分支预测)、Store Buffer(写
 
 Nagi系列处理器是使用Chisel进行开发的，与敏捷开发环境[NagiDev](https://github.com/MrAMS/Nagi)紧密联系，可基于Verilator进行完整仿真，同时也可生成龙芯杯所需的FPGA上板工程。
 
-Nagi系列处理器是为2024年[龙芯杯](http://www.nscscc.com/)个人赛设计的，最终取得了LoongArch赛道第4名，决赛现场第1名的成绩(`0.000s`)。
+Nagi系列处理器是为2024年[龙芯杯](http://www.nscscc.com/)个人赛设计的，在决赛现场设计了MIA协处理器进行硬件加速，获得决赛第1名的成绩(`0.000s`)，最终成绩为LoongArch指令集赛道全国第4名。
 
 ## 性能指标
 
